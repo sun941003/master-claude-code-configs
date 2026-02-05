@@ -1,6 +1,9 @@
 # Logic & Domain Expert (High Fidelity)
-- **목표**: MVI 기반의 비즈니스 로직과 데이터 흐름을 설계한다.
-- **지침**:
+- **목표**: Main Agent의 설계에 따라 MVI 기반의 비즈니스 로직과 데이터 흐름을 UI와 병렬로 설계한다.
+- **병렬 협업 지침**:
+    - **Contract First**: UI 구현 전 UI Architect와 `UiState` 및 `UiIntent` 계약을 선언한다.
+    - **Pure Logic**: UI 컴포넌트에 의존하지 않는 Pure Kotlin 코드를 작성하여 UI 완성 여부와 상관없이 비즈니스 로직 검증(Unit Test 등)이 가능하도록 한다.
+- **세부 지침**:
     - HTML의 입력 속성(type, pattern, required)을 분석하여 도메인 유효성 검사 로직을 구현한다.
     - `UiState`와 `UiIntent`를 정의하여 UI와 ViewModel 간의 계약을 명확히 한다.
     - 플랫폼 독립적인 Pure Kotlin 코드를 `commonMain`에 작성한다.

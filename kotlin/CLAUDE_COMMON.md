@@ -1,5 +1,23 @@
 # Kotlin/KMP Project Master’s Guide (High Fidelity)
 
+## 0. 공통 지침: 에이전트 협업 및 병렬 워크플로우
+본 프로젝트는 **Main Agent**의 지휘 아래 전문화된 **Sub-agents**가 병렬로 작업을 수행하는 구조를 유지한다.
+
+### 0-1. 에이전트 역할 구분
+- **Main Agent (Orchestrator)**: 사용자의 요구사항을 분석하여 전체 작업 계획을 수립하고, 작업을 Sub-agents에게 분배한다. 최종적으로 각 에이전트의 결과물을 통합(Merge)하고 전체 아키텍처 정합성을 검증한다.
+- **Sub-agents (Specialists)**: 특정 도메인에 특화된 지침을 수행하며, 메인 에이전트의 요청에 따라 독립적으로 코드를 생성한다.
+    - `ui-architect`: UI/UX, Compose/KMP UI, 플랫폼 대응.
+    - `logic-expert`: 비즈니스 로직, Clean Architecture(Domain/Data), MVI 흐름.
+    - `i18n-specialist`: 다국어 리소스, 지역화 표준, 국가별 포맷팅.
+    - `data-specialist`: API 연동, DB 스키마, 데이터 모델링. (필요 시)
+    - `project-organizer`: 빌드 설정, 의존성 관리, 패키지 구조 정돈.
+
+### 0-2. 병렬 작업 및 통합 지침
+1. **작업 분할 (Parallel Spawning)**: 메인 에이전트는 복합적인 요구사항을 'UI', 'Logic', 'Resource' 등 각 에이전트가 독립적으로 수행할 수 있는 단위로 쪼개어 동시 요청한다.
+2. **인터페이스 계약 (Contract First)**: 병렬 작업 전, 에이전트 간 접점(예: ViewModel 인터페이스, UiState 정의, Resource Key)을 먼저 확정하여 충돌을 방지한다.
+3. **독립 수행**: 각 서브 에이전트는 할당된 범위 내에서 최선의 코드를 생성하며, 타 영역에 의존성이 생길 경우 Mock 또는 인터페이스를 활용하여 진행한다.
+4. **최종 통합 (Grand Integration)**: 메인 에이전트는 서브 에이전트들이 제출한 코드를 통합하며, `CLAUDE_COMMON.md`의 기술 스택 및 아키텍처 표준을 최종적으로 준수하는지 확인한다.
+
 ## 1. 소통 및 언어 규칙
 - **언어**: 모든 대화, 분석, 질문, 에러 보고는 **한국어**로 진행한다.
 - **토큰 다이어트**: 인사말과 사설은 생략한다. 핵심 정보와 코드(Diff 위주)로만 응답한다.
@@ -21,7 +39,7 @@
     - 0순위: 중앙 메인 콘텐츠
     - 1순위: 리스트 형태 구성 요소
     - N순위: 기타 보조 뷰
-- **HTML 매핑**: HTML의 `id`, `type`, `required` 등을 분석하여 `UiState` 필드와 유효성 검사 로직에 자동 매핑한다.
+- **HTML 매핑**: HTML의 `id`, `type`, `required` 등을 분석하여 `UiState` 필드와 유효성 검사 로직에 자동 매핑한다. (UI Architect와 Logic Expert가 공동 분석 후 Main Agent가 통합한다.)
 
 ## 4. 리소스 프로토콜
 - **Material Icons**: 기본 아이콘 라이브러리를 최우선 사용한다.
