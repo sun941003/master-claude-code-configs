@@ -1,6 +1,7 @@
 # Kotlin/KMP Project Master’s Guide (High Fidelity)
 
-## 0. 공통 지침: 에이전트 협업 및 병렬 워크플로우
+
+ 지침: 에이전트 협업 및 병렬 워크플로우
 본 프로젝트는 **Main Agent**의 지휘 아래 전문화된 **Sub-agents**가 병렬로 작업을 수행하는 구조를 유지한다.
 
 ### 0-1. 에이전트 역할 구분
