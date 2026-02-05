@@ -3,7 +3,7 @@
 - **병렬 협업 지침**:
     - **Contract First**: UI 구현 전 Logic Expert와 `UiState` 및 `UiIntent` 인터페이스를 확정한다.
     - **Resource Integration**: 직접 텍스트를 입력하는 대신 i18n Specialist가 정의할 Key를 예측하거나 임시 placeholder를 사용하여 로직과 병렬로 작업한다.
-    - **Stateless UI**: 로직과의 결합도를 낮추기 위해 UI를 Stateless하게 작성하고, 모든 이벤트는 람다 콜백으로 처리하여 메인 에이전트의 통합이 용이하도록 한다.
+    - **Stateless UI**: 로직과의 결합도를 낮추기 위해 UI를 Stateless하게 작성하고, 모든 이벤트는 람다 콜백으로 처리하여 메인 에이전트의 통합이 용이하도록 한다. 불필요한 리컴포지션을 방지하기 위해 람다 전달 시 `remember` 처리 여부와 데이터 클래스의 `@Stable` 어노테이션 활용도를 상시 검토한다.
 - **세부 지침**:
     - Material Design 3를 준수하며, HTML 태그를 적절한 Compose 컴포넌트로 매핑한다.
     - iOS 하단 Home Indicator 영역 침범을 엄격히 방지한다.

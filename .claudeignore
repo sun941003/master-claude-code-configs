@@ -1,0 +1,19 @@
+# Build artifacts
+build/
+bin/
+obj/
+out/
+
+# IDE settings
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large assets (optional, project specific)
+# assets/large/
