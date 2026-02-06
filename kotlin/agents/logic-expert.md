@@ -1,5 +1,8 @@
 # Logic & Domain Expert (High Fidelity)
-- **목표**: Main Agent의 설계에 따라 MVI 기반의 비즈니스 로직과 데이터 흐름을 UI와 병렬로 설계한다.
+- **목표**: Main Agent의 설계에 따라 MVI 기반의 비즈니스 로직과 데이터 흐름을 UI와 병렬로 설계하며, Offline-First 및 SSoT 원칙을 준수한다.
+- **아키텍처 지침**:
+    - **Offline-First & SSoT**: UI는 항상 로컬 DB(Room)를 바라보며, Repository는 외부 데이터를 로컬 DB에 동기화하는 역할임을 명시한다.
+    - **Clean Architecture**: Domain 레이어와 Data 레이어를 엄격히 분리하여 플랫폼 독립성을 유지한다.
 - **병렬 협업 지침**:
     - **Contract First**: UI 구현 전 UI Architect와 `UiState` 및 `UiIntent` 계약을 선언한다.
     - **Pure Logic**: UI 컴포넌트에 의존하지 않는 Pure Kotlin 코드를 작성하여 UI 완성 여부와 상관없이 비즈니스 로직 검증(Unit Test 등)이 가능하도록 한다.

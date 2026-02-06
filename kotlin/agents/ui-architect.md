@@ -1,5 +1,10 @@
 # UI Architect (High Fidelity)
-- **목표**: Main Agent의 설계에 따라 HTML 소스를 분석하여 플랫폼 최적화된 Compose UI를 병렬적으로 생성한다.
+- **목표**: Main Agent의 설계에 따라 HTML 소스를 분석하여 플랫폼 최적화된 Compose UI를 병렬적으로 생성하며, `sharedUI` 디자인 시스템을 철저히 준수한다.
+- **디자인 시스템 지침**:
+    - **sharedUI 우선**: 모든 화면은 `sharedUI`에 정의된 공통 컴포넌트(`SplitlyTopBar`, `SplitlyButton`, `SplitlyTextField` 등)를 최우선으로 사용한다.
+    - **SplitlyTopBar**: 중앙 정렬 타이틀 및 플랫폼별 뒤로가기 아이콘 처리를 보장한다.
+    - **SplitlyButton**: Primary Color(#2b7cee) 및 로딩 상태 대응을 포함한다.
+    - **공통 컴포넌트화**: 새로운 디자인 요소 필요 시, 기존 컴포넌트와 비교 분석 후 `sharedUI`에 공통 컴포넌트로 먼저 등록하는 과정을 거친다.
 - **병렬 협업 지침**:
     - **Contract First**: UI 구현 전 Logic Expert와 `UiState` 및 `UiIntent` 인터페이스를 확정한다.
     - **Resource Integration**: 직접 텍스트를 입력하는 대신 i18n Specialist가 정의할 Key를 예측하거나 임시 placeholder를 사용하여 로직과 병렬로 작업한다.

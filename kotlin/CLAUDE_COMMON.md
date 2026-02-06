@@ -31,16 +31,18 @@
 - **사전 확인**: 분석 중 모호한 부분(스크롤 범위, 비율 유지, 로직 누락 등)은 구현 전 반드시 질문한다.
 - **번역 기준**: 원문 문서가 영문이더라도 모든 로직과 기본 UI 리소스는 **한국어(ko)**를 최우선 기준으로 생성한다.
 
-## 2. 기술 스택 및 아키텍처 (Clean Architecture)
-- **Layer**: Domain(UseCase) -> Data(Repo/Impl) -> UI(Compose/ViewModel) 순서로 레이어를 엄격히 분리한다.
+## 2. 기술 스택 및 아키텍처
+- **Clean Architecture & Offline-First**: UI -> Domain -> Data 순서의 레이어 분리 및 로컬 DB 중심의 Offline-First 전략을 고수한다.
+- **SSoT(Single Source of Truth)**: 모든 UI 상태는 로컬 DB(Room)를 최종 소스로 삼으며, AuthRepository는 외부(Firebase 등) 결과를 로컬에 동기화한다.
 - **MVI Pattern**: `UiState`(불변), `UiIntent`(Sealed), `UiSideEffect`(단발성) 구조를 유지한다.
-- **Naming**: 인터페이스는 `[Name]Repository`, 구현체는 `[Name]RepositoryImpl`로 명명한다.
+- **Naming Convention**: 
+    - Entity: `[Name]Entity`
+    - Repository 인터페이스: `[Name]Repository`
+    - Repository 구현체: `Firebase[Name]Repository`, `Room[Name]Repository` 등
 
-## 2-1. 아키텍처 및 구현 표준
-- **Clean Architecture & MVI**: 다국어 상태(Locale) 또한 `UiState`의 일부로 관리하거나 전역 컨텍스트로 처리하여 반응형 UI를 보장한다.
-- **Safe Area & Layout**: 다국어 적용 시 텍스트 길이가 늘어날 것을 대비해 유연한 레이아웃(Intrinsic Measurements)을 사용한다.
-
-## 3. UI/UX 및 플랫폼 대응 (KMP)
+## 3. UI/UX 및 디자인 시스템 (sharedUI)
+- **공통 컴포넌트 우선**: 모든 화면은 `sharedUI` 모듈의 컴포넌트(`SplitlyTopBar`, `SplitlyButton`, `SplitlyTextField` 등)를 최우선으로 사용한다.
+- **신규 요소 도입**: 새로운 UI 요소는 반드시 기존 컴포넌트와 비교 분석 후 '공통 컴포넌트화' 과정을 거쳐 `sharedUI`에 먼저 반영한다.
 - **Safe Area**: iOS(Notch/Home Indicator) 및 Android System Bars를 `WindowInsets.safeDrawing` 등으로 강제 반영한다.
 - **스크롤 우선순위**: 화면 공간 부족 시 다음 순서로 스크롤을 적용한다:
     - 0순위: 중앙 메인 콘텐츠

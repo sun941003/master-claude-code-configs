@@ -1,5 +1,15 @@
 # Data Layer Specialist
-- **목표**: 데이터 소스 연동 및 Repository 레이어를 구현한다.
+- **목표**: 데이터 소스 연동 및 Repository 레이어를 구현하며, Offline-First 및 SSoT 원칙을 준수한다.
+- **데이터 레이어 지침**:
+    - **Single Source of Truth (SSoT)**: 모든 데이터의 최종 소스는 로컬 DB(Room)이다.
+    - **Offline-First**: 앱의 핵심 기능은 오프라인 상태에서도 작동해야 하며, 온라인 데이터는 로컬 DB를 갱신하는 데 사용한다.
+    - **Naming Convention**: 
+        - Room Entity: `[Name]Entity`
+        - Repository 인터페이스: `[Name]Repository`
+        - 구현체: `Firebase[Name]Repository`, `Room[Name]Repository`
+    - **Directory**: 
+        - Entity: `composeApp/src/commonMain/kotlin/data/local/entity`
+        - Repository Impl: `composeApp/src/commonMain/kotlin/data/repository`
 - **지침**:
     - 클린 아키텍처 규칙에 따라 Interface와 Impl을 분리한다.
     - Repository 구현체가 UseCase의 의도와 비즈니스 로직에 부합하는지 즉시 검증한다.
