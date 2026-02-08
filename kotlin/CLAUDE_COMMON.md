@@ -155,3 +155,65 @@
 - **병렬 서브에이전트**: UI 코드와 테스트 코드를 동시 생성.
 - **Git 자동화**: 커밋 메시지, PR 설명, 체인지로그 생성 지원.
 - **대규모 변경 리뷰**: 전체 diff를 빠짐없이 리뷰하여 누락 방지.
+
+---
+
+## 8. 작업 완료 프로토콜 (Task Completion Protocol)
+
+> **모든 작업의 마지막 단계**에서 반드시 실행해야 하는 문서 동기화 프로세스.
+> 이 프로토콜은 프로젝트 지식이 항상 최신 상태를 유지하도록 보장한다.
+
+### 8-1. 문서 계층 구조 (Documentation Hierarchy)
+
+```
+Level 0 (Global):    CLAUDE.md / CLAUDE_COMMON.md     ← 모든 프로젝트 공통 규칙
+Level 1 (Project):   INSTRUCTIONS.md                   ← 프로젝트 특화 아키텍처/비즈니스 규칙
+                     CONVENTIONS.md                    ← 코딩 컨벤션
+                     SKILLS.md                         ← 프로젝트 특화 스킬
+                     [도메인별].md                      ← 도메인 가이드 (예: LOCALIZATION.md)
+Level 2 (Memory):    memory/MEMORY.md                  ← Auto Memory (세션 간 지속, 200줄 이내)
+                     memory/structure.md               ← 파일 구조 참조
+                     memory/[topic].md                 ← 주제별 상세 노트
+```
+
+### 8-2. 동기화 트리거 조건
+
+작업 완료 시 아래 중 **하나라도 해당**되면 문서 동기화를 실행한다:
+
+| 변경 유형 | 동기화 대상 |
+|-----------|------------|
+| 새 파일/디렉터리 추가 | `structure.md`, `INSTRUCTIONS.md` |
+| expect/actual 추가 | `INSTRUCTIONS.md`, `MEMORY.md` |
+| DB 스키마 변경 | `INSTRUCTIONS.md`, `MEMORY.md` |
+| 새 화면(MVI) 추가 | `structure.md`, `INSTRUCTIONS.md` |
+| DI 모듈 변경 | `INSTRUCTIONS.md` |
+| 빌드/릴리스 설정 변경 | `INSTRUCTIONS.md`, `MEMORY.md` |
+| 새 도메인 규칙/Gotcha 발견 | `CONVENTIONS.md`, `MEMORY.md` |
+| 아키텍처 패턴 변경 | `CLAUDE.md` (글로벌), `INSTRUCTIONS.md` (프로젝트) |
+| i18n 리소스 추가/삭제 | 도메인별 가이드 (예: `LOCALIZATION.md`) |
+
+### 8-3. 동기화 실행 절차
+
+1. **변경 영향 분석**: 이번 작업에서 수정/생성된 파일 목록을 기반으로 영향받는 문서를 식별한다.
+2. **Top-Down 업데이트**: Level 0 → Level 1 → Level 2 순서로 검토하고 업데이트한다.
+3. **업데이트 판단 기준**:
+   - 해당 문서에 이미 최신 정보가 반영되어 있으면 → **Skip**
+   - 새로운 정보가 추가되어야 하면 → **Update**
+   - 기존 정보가 변경/삭제되었으면 → **Update**
+4. **변경 보고**: 동기화 결과를 사용자에게 테이블 형태로 보고한다.
+
+```
+예시 보고 형식:
+| 파일 | 상태 | 변경 내용 |
+|------|------|----------|
+| INSTRUCTIONS.md | Updated | 새 화면 LanguageSelection 추가 |
+| structure.md    | Updated | languageselection/ 디렉터리 추가 |
+| MEMORY.md       | Updated | i18n 섹션 추가 |
+| CONVENTIONS.md  | Skip    | 변경 없음 |
+```
+
+### 8-4. 주의사항
+
+- **CLAUDE.md 수정은 신중하게**: 글로벌 규칙이므로 모든 프로젝트에 영향. 프로젝트 특화 규칙은 반드시 `INSTRUCTIONS.md`에 작성.
+- **MEMORY.md 200줄 제한**: 시스템 프롬프트에 자동 로딩되므로 간결하게 유지. 상세 내용은 별도 `memory/[topic].md`로 분리.
+- **단순 버그 수정**은 새로운 Gotcha가 발견된 경우에만 `MEMORY.md`에 기록. 일상적 수정은 Skip.
