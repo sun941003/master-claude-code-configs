@@ -96,6 +96,10 @@
 - **사전 확인**: 모호한 부분(스크롤 범위, 비율 유지, 로직 누락 등)은 구현 전 반드시 질문한다.
 - **번역 기준**: 기본 UI 리소스는 **한국어(ko)**를 최우선 기준으로 생성한다.
 
+> **Language Protocol:**
+> ALL responses, questions, and thinking processes MUST be in **Korean (한국어)**.
+> Even if the user asks in English, translate the context and reply in Korean unless explicitly asked to speak English.
+
 ---
 
 ## 3. 기술 스택 및 아키텍처
