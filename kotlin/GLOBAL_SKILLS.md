@@ -55,12 +55,7 @@
    - 파일 수정 수: 파일 당 약 2-5k 토큰
    - 빌드 검증: 약 1-2k 토큰
    - 서브에이전트 작업: 에이전트 당 약 5-15k 토큰
-3. 추정 결과를 사용자에게 보고한다:
-   ```
-   예상 토큰 소모: ~50k tokens
-   현재 세션 누적: ~30k tokens
-   권장 모델 Tier: Tier 2 (Sonnet)
-   ```
+3. 추정 결과를 사용자에게 보고한다.
 4. 한도 초과 위험이 있으면 작업 분할 또는 모델 다운그레이드를 제안한다.
 
 ---
@@ -79,14 +74,6 @@
    - Tier 2 (Standard) 전환: `/model sonnet`
    - Tier 3 (Eco) 전환: `/model haiku`
 4. 전환 이유와 예상 토큰 절약량을 함께 설명한다.
-
-**예시 출력**:
-```
-현재 작업: i18n 리소스 키 추가 (Tier 3 수준)
-현재 모델: Opus (Tier 1)
-→ 토큰 절약을 위해 `/model haiku` 전환을 추천합니다.
-  예상 절약: 약 70% (Opus 대비)
-```
 
 ---
 
@@ -113,11 +100,181 @@
 
 **실행 절차**:
 1. 사용자로부터 화면 이름(예: `Settings`)을 입력받는다.
-2. 다음 5개 파일을 동시에 생성한다:
+2. 프로젝트의 `SKILLS.md`에 `addNewScreen` 스킬이 정의되어 있으면 해당 스킬의 템플릿을 따른다.
+3. 기본 생성 파일 (5개):
    - `[Name]UiState.kt` - 불변 상태 데이터 클래스
    - `[Name]UiIntent.kt` - Sealed class 이벤트
    - `[Name]UiSideEffect.kt` - 단발성 이벤트
    - `[Name]ViewModel.kt` - StateFlow 기반 ViewModel
    - `[Name]Screen.kt` - Composable 화면
-3. Koin DI 모듈(`ViewModelModule.kt`)에 자동 등록한다.
-4. 네비게이션 그래프에 라우트를 추가한다.
+4. Koin DI 모듈에 ViewModel을 등록한다.
+5. 네비게이션 그래프에 라우트를 추가한다.
+6. 빌드 검증 후 결과를 보고한다.
+
+> 프로젝트별 `addNewScreen` 스킬이 코드 템플릿까지 포함하므로, 해당 스킬이 존재하면 우선 참조한다.
+
+---
+
+## 7. addDataLayer
+
+**목적**: 새로운 데이터 모델에 필요한 전체 Data Layer 체인을 한 번에 생성한다.
+
+**트리거 조건**: 새로운 도메인 엔티티/데이터 모델이 필요할 때.
+
+**실행 절차**:
+1. 사용자로부터 모델 이름과 필드 정의를 입력받는다.
+2. 다음 파일들을 **병렬로** 생성한다:
+
+   ```
+   생성 파일 체인:
+   domain/model/[Name].kt              # Domain 모델 (data class, 불변)
+   data/local/entity/[Name]Entity.kt   # Room Entity (@Entity, @PrimaryKey)
+   data/local/dao/[Name]Dao.kt         # Room DAO (CRUD 쿼리)
+   domain/repository/[Name]Repository.kt  # Repository 인터페이스
+   data/repository/[Name]RepositoryImpl.kt  # Repository 구현체
+   ```
+
+3. `EntityMappers.kt`에 양방향 변환 함수를 추가한다:
+   ```kotlin
+   fun [Name]Entity.toDomain() = [Name](...)
+   fun [Name].toEntity() = [Name]Entity(...)
+   ```
+
+4. `SplitlyDatabase.kt`에 Entity와 DAO를 등록한다.
+5. DI 모듈에 등록한다:
+   - `AppModule.kt`: DAO singleton 추가
+   - `RepositoryModule.kt`: Repository 바인딩 추가
+6. DB 버전을 +1하고 AutoMigration을 추가한다.
+7. 빌드 검증 후 결과를 보고한다.
+
+**주의사항**:
+- 새 컬럼에는 반드시 `@ColumnInfo(defaultValue = "...")` 지정 (AutoMigration 필수).
+- Entity의 Enum 필드는 `type.name` (저장), `Enum.valueOf(type)` (복원)으로 변환.
+- JSON 복합 객체는 `Json.encodeToString()`/`Json.decodeFromString()` 사용.
+
+---
+
+## 8. addExpectActual
+
+**목적**: 새로운 플랫폼별 구현(expect/actual)을 안전하게 추가한다.
+
+**트리거 조건**: 플랫폼별 네이티브 API 접근이 필요한 기능 추가 시.
+
+**실행 절차**:
+1. 기능 요구사항을 분석하여 `expect` 시그니처를 설계한다.
+2. 다음 파일들을 **동시에** 생성한다:
+
+   ```
+   commonMain/[path]/[Name].kt          # expect 선언
+   androidMain/[path]/[Name].android.kt  # actual (Android)
+   iosMain/[path]/[Name].ios.kt          # actual (iOS)
+   ```
+
+3. 각 플랫폼별 구현 시 주의사항:
+
+   **Android**:
+   - Activity 참조 필요 시: Koin singleton + `initializeXxxContext(activity)` 패턴
+   - `registerForActivityResult()`: 반드시 `onCreate` 내에서 호출
+   - `AppCompatDelegate` static 메서드는 `ComponentActivity`에서도 정상 동작
+
+   **iOS**:
+   - Swift 연동: `object XxxBridge` 싱글톤 + 콜백 클로저 패턴
+   - `@OptIn(ExperimentalForeignApi::class)` opt-in 필요 시 명시
+   - `NSDate`는 `timeIntervalSinceReferenceDate` 사용 (2001 기준)
+   - `Clock.System` 대신 프로젝트의 `currentTimeMillis()` expect/actual 사용
+
+4. DI 모듈(`ServiceModule.kt`)에 등록한다:
+   ```kotlin
+   single<[Name]> { create[Name]() }  // expect fun create[Name]() 활용
+   ```
+5. 양쪽 플랫폼 모두 빌드 검증한다.
+6. `INSTRUCTIONS.md` §3 expect/actual 테이블에 추가한다.
+
+---
+
+## 9. syncI18nResources
+
+**목적**: 다국어 리소스 파일을 마스터 파일 기준으로 전체 동기화한다.
+
+**트리거 조건**: 새 문자열 키 추가, 기존 키 수정/삭제, 대규모 기능 추가 시.
+
+**실행 절차**:
+1. 변경 유형을 판별한다 (추가/수정/삭제).
+2. 마스터 파일(한국어 `values-ko/strings.xml`)의 변경 사항을 확인한다.
+3. 프로젝트의 `LOCALIZATION.md`에 정의된 워크플로우를 따른다.
+4. **병렬 처리 전략**:
+   - 10개 미만 키: 직접 전체 파일 순회하며 수정
+   - 10개 이상 키: 서브에이전트를 활용한 배치 처리 (언어 그룹별 분할)
+5. 호환성 에일리어스 동기화 (원본 → 별칭 복사):
+   ```
+   zh → zh-rCN, he → iw, fil → tl, id → in, no → nb
+   ```
+6. 검증:
+   - 키 개수 일치 확인 (Master vs 모든 로케일)
+   - 플레이스홀더(`%1$s` 등) 무결성 확인
+   - 빌드 검증
+
+**주의사항**:
+- 플레이스홀더 순서/포맷은 절대 변경하지 않는다 (런타임 크래시 위험).
+- 브랜드명(`Splitly`, `Google` 등)은 번역하지 않는다.
+- XML 특수문자(`&`, `<`, `>`, `'`, `"`)는 반드시 이스케이프한다.
+- `SupportedLanguages.kt`에 등록해야 앱 내 언어 선택 UI에 노출된다.
+
+---
+
+## 10. updateDependencies
+
+**목적**: `libs.versions.toml` 기반으로 의존성을 안전하게 업데이트한다.
+
+**트리거 조건**: 의존성 업데이트 요청, 보안 취약점 발견, 새 라이브러리 추가 시.
+
+**실행 절차**:
+1. `gradle/libs.versions.toml`의 현재 버전을 확인한다.
+2. 업데이트 대상의 최신 안정 버전을 조사한다.
+3. **호환성 매트릭스 검증**:
+
+   | 업데이트 대상 | 반드시 함께 확인 |
+   |-------------|---------------|
+   | Kotlin | KSP 버전, Compose 컴파일러 호환성 |
+   | Compose Multiplatform | Material3 버전, Kotlin 호환성 |
+   | Room | SQLite 버전, KSP 버전 |
+   | Firebase GitLive | Android BOM 버전과의 네이티브 호환성 |
+   | Koin | Compose 통합 API 변경 여부 |
+   | AGP | compileSdk/targetSdk, ProGuard 호환성 |
+
+4. `libs.versions.toml` 수정 후 빌드 검증한다.
+5. 필요 시 ProGuard 규칙을 업데이트한다.
+6. `INSTRUCTIONS.md` 버전 테이블을 업데이트한다.
+
+**주의사항**:
+- Alpha/Beta 버전은 사용자 승인 후에만 적용한다.
+- 메이저 버전 업데이트 시 Breaking Changes를 사전 분석한다.
+- 한 번에 하나의 라이브러리만 업데이트하여 문제 발생 시 원인을 특정할 수 있도록 한다.
+
+---
+
+## 11. debugCrash
+
+**목적**: 크래시/에러를 체계적으로 분석하고 근본 원인을 찾는다.
+
+**트리거 조건**: 앱 크래시, 런타임 에러, 예상치 못한 동작 보고 시.
+
+**실행 절차**:
+1. **에러 유형 분류**:
+
+   | 유형 | 접근 방법 |
+   |------|----------|
+   | Compose 렌더링 | Recomposition 추적, Modifier 순서 점검 |
+   | Koin 주입 실패 | 모듈 등록 순서, `get()` vs `inject()` 사용처 점검 |
+   | Room 마이그레이션 | AutoMigration 체인, `defaultValue` 누락 확인 |
+   | 리소스 빌드 실패 | composeResources 경로, Gradle 캐시 클리어 |
+   | Theme 충돌 | Activity 부모 클래스 (ComponentActivity 필수) |
+   | 플랫폼 크래시 | expect/actual 분기 확인, 네이티브 API 호출 검증 |
+
+2. **Root Cause Analysis (RCA)**:
+   - 스택 트레이스에서 프로젝트 코드 라인을 추출한다.
+   - 관련 파일 체인(Screen → ViewModel → UseCase → Repository)을 역추적한다.
+   - 최근 변경 사항(`git log --oneline -10`)과 대조한다.
+
+3. 수정 사항을 구현하고 동일 시나리오에서 재현 불가를 검증한다.
+4. 새로운 Gotcha가 발견되면 `MEMORY.md`에 기록한다.
