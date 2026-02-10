@@ -278,3 +278,58 @@
 
 3. 수정 사항을 구현하고 동일 시나리오에서 재현 불가를 검증한다.
 4. 새로운 Gotcha가 발견되면 `MEMORY.md`에 기록한다.
+
+---
+
+## 12. comprehensiveTest
+
+**목적**: 로직 테스트와 UI 테스트를 포괄적으로 작성한다.
+
+**트리거 조건**: 새 기능 구현 완료 시, 테스트 작성 요청 시, 버그 수정 후 회귀 방지 시.
+
+**실행 절차**:
+1. **테스트 범위 산정**: 대상 코드의 공개 API, 분기 로직, 엣지 케이스를 분석한다.
+2. **로직 테스트 작성**:
+   - UseCase/Repository/ViewModel 단위 테스트.
+   - 최소 5개 케이스: Happy path, 빈 입력, null/경계값, 음수/오버플로우, 에러 상황.
+   - Mock 의존성은 Koin Test 또는 수동 Mock 사용.
+3. **UI 테스트 작성** (요청 시):
+   - Compose UI 테스트: 렌더링, 사용자 인터랙션, 상태 변화 검증.
+   - 엣지 케이스: 빈 리스트, 긴 텍스트, RTL 레이아웃, 로딩/에러 상태.
+4. **테스트 실행**: `./gradlew :composeApp:jvmTest` 또는 플랫폼별 테스트.
+5. 실패 케이스가 있으면 원인 분석 후 수정.
+
+**주의사항**:
+- 테스트 파일은 `src/commonTest/` 또는 `src/jvmTest/`에 위치.
+- Domain 레이어 테스트는 플랫폼 독립적이어야 한다.
+- 테스트 네이밍: `should_[expected]_when_[condition]` 패턴.
+
+---
+
+## 13. gradleCacheCleanup
+
+**목적**: Gradle 캐시와 빌드 아티팩트를 정리하여 디스크 공간을 확보한다.
+
+**트리거 조건**: 디스크 여유 공간 10GB 미만, 빌드 오류 시 캐시 문제 의심, 사용자 요청 시.
+
+**실행 절차**:
+1. **디스크 상태 확인**:
+   ```bash
+   df -h /
+   du -sh ~/.gradle/caches/ ~/.gradle/wrapper/ composeApp/build/
+   ```
+2. **이전 Gradle 버전 캐시 식별**:
+   ```bash
+   ls -d ~/.gradle/caches/*/  # 현재 사용 버전 이외의 디렉터리 식별
+   ```
+3. **안전한 정리 실행**:
+   - 이전 버전 캐시: `rm -rf ~/.gradle/caches/<old-version>/`
+   - 프로젝트 빌드: `rm -rf composeApp/build/`
+   - Configuration Cache: `rm -rf .gradle/configuration-cache`
+4. **정리 후 빌드 검증**: `./gradlew :composeApp:assembleDebug --no-build-cache`
+5. 정리 결과(회수된 공간)를 보고한다.
+
+**주의사항**:
+- `~/.gradle/caches/modules-2/`는 의존성 아티팩트 → 삭제 시 재다운로드 필요.
+- `~/.gradle/wrapper/`는 Gradle 배포판 → 현재 버전만 유지 가능.
+- 정리 후 첫 빌드는 캐시 재생성으로 느릴 수 있다.

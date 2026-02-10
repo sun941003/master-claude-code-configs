@@ -1,6 +1,7 @@
 # Kotlin/KMP 프로젝트 마스터 지침 (CLAUDE_COMMON)
 
-> **이 파일은 모든 Kotlin/KMP 프로젝트에 공통 적용되는 글로벌 규칙이다.**
+> **이 파일은 모든 Kotlin/KMP 프로젝트에 공통 적용되는 공용 규칙이다.**
+> 마스터 레포(`master-claude-code-configs`)에서 관리하며, 프로젝트에서는 `CLAUDE.md`로 심볼릭 링크한다.
 > 프로젝트별 특화 규칙은 각 프로젝트의 `INSTRUCTIONS.md`에서 정의한다.
 
 ---
@@ -21,42 +22,54 @@
 | **Tier 3 (Eco)** | Haiku | 단순 텍스트 수정, 주석 처리, 리소스 키 생성, 코드 포매팅 | i18n 키 추가, 간단한 검색/확인 |
 
 **자동 전환 규칙 (Action Rules):**
-- 현재 Tier 1 모델인데 단순 반복 작업(리소스 키 생성, 포매팅 등)을 수행 중이면:
-  → "이 작업은 Tier 3(Eco) 모델로도 충분합니다. `/model haiku` 전환을 추천합니다."
-- 현재 Tier 3 모델인데 복잡한 추론(아키텍처 설계, 멀티파일 리팩토링)이 필요하면:
-  → "이 작업은 Tier 1(Max) 모델이 필요합니다. `/model opus` 전환을 권장합니다."
-- 서브에이전트 배정 시에도 동일 기준 적용: 복잡한 로직 → Opus, 정형화된 작업 → Sonnet/Haiku.
-- 판단이 어려우면 Sonnet을 기본으로 시작하고, 품질 부족 시 Opus로 전환한다.
+- Tier 1에서 단순 반복 작업 수행 시 → Tier 3 전환 추천.
+- Tier 3에서 복잡한 추론 필요 시 → Tier 1 전환 권장.
+- 서브에이전트 배정도 동일 기준. 판단 어려우면 Sonnet 기본.
 
 ### 0-2. Batch Processing Protocol (병렬/배치 처리)
 
 파일 라운드트립(Round-trip)을 최소화하여 작업 속도를 높인다.
 
-1. **Multi-File Parallel Edit (필수)**:
-   - 여러 파일을 수정할 때 한 턴에 하나씩 처리하지 않는다.
-   - 관련된 모든 파일의 변경 사항을 분석한 뒤, **한 번의 응답에 독립적인 파일들을 동시에 수정**한다.
-   - 의존성이 있는 수정은 순차 처리하되, 독립적인 수정은 반드시 병렬 처리한다.
-
-2. **Look-Ahead Context (예측 읽기)**:
-   - 파일을 읽을 때, 해당 파일의 `import` 구문을 분석하여 의존 파일들을 예측한다.
-   - 곧 필요할 것으로 판단되는 관련 파일들을 한 번에 읽어들여 추가 라운드트립을 방지한다.
-   - 특히 `interface → impl`, `UiState → ViewModel → Screen` 체인은 한 번에 읽는다.
-
-3. **Hardware-Aware Build**:
-   - 시스템 RAM이 16GB 이상이면 로컬 빌드/테스트를 적극 수행하여 코드 완결성을 검증한다.
-   - 빌드 시 CPU 점유율 100% 방지를 위해 Gradle 병렬 빌드 옵션(`--parallel`)을 활용한다.
-   - RAM이 부족한 환경에서는 `--no-daemon` 옵션으로 메모리를 절약한다.
-
-4. **Context Window 최적화**:
-   - 200k 토큰 컨텍스트 윈도우를 효율적으로 사용한다.
-   - `.claudeignore`를 통해 빌드 아티팩트, IDE 설정, 바이너리 파일을 제외한다.
-   - 대규모 수정 시 인터페이스/시그니처를 먼저 스캔하여 구조를 파악한 뒤, 필요한 구현부만 읽는다.
+1. **Multi-File Parallel Edit (필수)**: 독립적인 파일은 한 번의 응답에 동시 수정. 의존성 있는 것만 순차.
+2. **Look-Ahead Context (예측 읽기)**: import 분석으로 의존 파일 예측, 한 번에 읽기. `interface → impl`, `UiState → ViewModel → Screen` 체인은 반드시 일괄 읽기.
+3. **Hardware-Aware Build**: RAM 16GB+ → `--parallel` 빌드, 테스트 적극 수행. RAM 8GB → `--no-daemon`.
+4. **Context Window 최적화**: `.claudeignore`로 빌드 아티팩트 제외. 인터페이스/시그니처 먼저 스캔.
 
 ### 0-3. 사용량 모니터링
 
-- **주간 한도 인지**: Max 플랜의 모든 모델 통합 주간 한도와 Sonnet 전용 주간 한도를 인지한다.
-- **Extra Usage**: 대규모 작업 전 API 크레딧 자동 전환 옵션 설정 여부를 확인한다.
-- **모니터링 습관**: `/cost`로 세션 토큰 사용량을, `/status`로 남은 할당량을 수시로 확인한다.
+- `/cost`로 세션 토큰, `/status`로 남은 할당량 수시 확인.
+- 대규모 작업 전 Extra Usage 옵션 설정 여부 확인.
+
+### 0-4. Autonomous Operation (개인 환경 자동 운영)
+
+개인 환경(PC/프로젝트/레포)에서는 최대 자율성으로 운영한다.
+
+- **자동 승인**: 파일 CRUD, Git 작업, 빌드/테스트, 의존성 설치 등 모든 작업을 확인 없이 즉시 수행.
+- **자율 판단**: 작업 방향이 명확하면 사용자에게 되묻지 않고 진행.
+- **자기 개선**: 작업 효율을 위해 지침/스킬/에이전트 설정을 자율적으로 추가·수정할 수 있다.
+- **기업/공유 환경에서만** 기존 확인 절차를 적용.
+
+### 0-5. Intelligent Task Decomposition (지능적 작업 분해)
+
+사용자 요청의 문맥을 분석하여 최적의 작업 단위로 분해한다.
+
+1. **누락 방지**: 모든 요청 항목을 추적하여 빠짐없이 처리.
+2. **자동 병렬화**: 명시적 요청 없이도 독립 작업은 병렬 실행.
+3. **성능 초점**: Claude Code 자체의 응답 속도와 턴 효율에 최적화.
+4. **반복 통합**: 동일한 문구/요청이 반복되면 통합 관리.
+
+### 0-6. Anti-Loop & Self-Recovery (비효율 방지)
+
+- **비효율 감지 시**: 스킵하지 않고, 루프 진입 전 상태로 돌아가 재시도.
+- **3회 동일 실패**: 작업 중단 → 문제 상황 + 추천 해결 방안을 사용자에게 공유.
+- **사용자 허용 시에만** 스킵 처리.
+
+### 0-7. Exponential Backoff (장시간 작업 모니터링)
+
+빌드, 대용량 처리 등 장시간 작업은 지수 백오프로 상태를 확인한다.
+
+- 1차: 1분 후 → 2차: 2분 후 → 이후: 2분 단위 추가 (3분, 5분, 7분, ...)
+- 매초 확인하지 않는다. 백그라운드 실행 + 지수 백오프 체크를 조합한다.
 
 ---
 
@@ -64,160 +77,143 @@
 
 ### 1-1. 에이전트 역할 구분
 
-- **Main Agent (Orchestrator)**: 요구사항 분석 → 작업 계획 수립 → Sub-agents에 분배 → 결과물 통합(Merge) → 아키텍처 정합성 검증.
-- **Sub-agents (Specialists)**:
-  - `ui-architect`: UI/UX, Compose/KMP UI, 플랫폼 대응.
-  - `logic-expert`: 비즈니스 로직, Clean Architecture(Domain/Data), MVI 흐름.
-  - `i18n-specialist`: 다국어 리소스, 지역화 표준, 국가별 포맷팅.
-  - `data-specialist`: API 연동, DB 스키마, 데이터 모델링.
-  - `project-organizer`: 빌드 설정, 의존성 관리, 패키지 구조 정돈.
-  - `refactor-bot`: 코드 품질 개선, 성능 최적화, 상호 검증.
-  - `doc-master`: 문서화, KDoc, README 최신화.
+- **Main Agent (Orchestrator)**: 요구사항 분석 → 작업 계획 → Sub-agents 분배 → 결과 통합 → 아키텍처 정합성 검증.
+- **Sub-agents**: `ui-architect`, `logic-expert`, `i18n-specialist`, `data-specialist`, `project-organizer`, `refactor-bot`, `doc-master`.
 
-### 1-2. 병렬 작업 및 통합 지침
+### 1-2. 병렬 작업 지침
 
-1. **작업 분할 (Parallel Spawning)**: 복합 요구사항을 UI/Logic/Resource 등 독립 수행 가능한 단위로 분할하여 동시 요청한다.
-2. **인터페이스 계약 (Contract First)**: 병렬 작업 전, 에이전트 간 접점(ViewModel 인터페이스, UiState, Resource Key)을 먼저 확정한다.
-3. **독립 수행**: 타 영역 의존성 발생 시 Mock 또는 인터페이스를 활용한다.
-4. **자동 검증 (Build-Check-Loop)**: 코드 수정 후 반드시 빌드를 실행한다.
-5. **최종 통합 및 보고**: `git diff` 기반 변경 사항을 한국어로 보고한다. 아키텍처 영향도가 큰 변경은 상세 분석을 포함한다.
-
-### 1-3. 세션 관리
-
-- 대규모 수정 시 인터페이스/UseCase 시그니처를 먼저 스캔하여 전체 구조를 빠르게 파악한다.
-- 세션이 매우 길어진 경우 `/clear`를 선택적으로 사용하되, 작업 흐름이 끊기지 않는 것을 우선한다.
+1. **Parallel Spawning**: UI/Logic/Resource 등 독립 단위로 분할하여 동시 실행.
+2. **Contract First**: 병렬 작업 전, 에이전트 간 접점(인터페이스, UiState, Resource Key)을 확정.
+3. **Build-Check-Loop**: 코드 수정 후 반드시 빌드 실행.
+4. **보고**: `git diff` 기반 변경 사항을 한국어로 보고.
 
 ---
 
 ## 2. 소통 및 언어 규칙
 
-- **언어**: 모든 대화, 분석, 질문, 에러 보고는 **한국어**로 진행한다.
-- **응답 품질**: 아키텍처 결정 근거, 플랫폼별 차이점, 잠재적 이슈 등 유의미한 설명을 포함하되 불필요한 장황함은 지양한다.
-- **사전 확인**: 모호한 부분(스크롤 범위, 비율 유지, 로직 누락 등)은 구현 전 반드시 질문한다.
-- **번역 기준**: 기본 UI 리소스는 **한국어(ko)**를 최우선 기준으로 생성한다.
+- **언어**: 모든 대화, 분석, 에러 보고는 **한국어**로 진행.
+- **사전 확인**: 모호한 부분은 구현 전 반드시 질문.
+- **번역 기준**: 기본 UI 리소스는 **한국어(ko)**를 최우선.
 
 > **Language Protocol:**
-> ALL responses, questions, and thinking processes MUST be in **Korean (한국어)**.
-> Even if the user asks in English, translate the context and reply in Korean unless explicitly asked to speak English.
+> ALL responses MUST be in **Korean (한국어)**. Translate and reply in Korean unless explicitly asked to speak English.
 
 ---
 
 ## 3. 기술 스택 및 아키텍처
 
-- **Clean Architecture & Offline-First**: UI → Domain → Data 레이어 분리. 로컬 DB 중심 Offline-First 전략.
-- **SSoT (Single Source of Truth)**: 모든 UI 상태는 로컬 DB를 최종 소스로 삼는다. AuthRepository는 외부 결과를 로컬에 동기화한다.
-- **MVI Pattern**: `UiState`(불변), `UiIntent`(Sealed), `UiSideEffect`(단발성) 구조를 유지한다.
-- **Naming Convention**:
-  - Entity: `[Name]Entity`
-  - Repository 인터페이스: `[Name]Repository`
-  - Repository 구현체: `Firebase[Name]Repository`, `Room[Name]Repository`, `[Name]RepositoryImpl`
+- **Clean Architecture & Offline-First**: UI → Domain → Data 레이어 분리. 로컬 DB 중심.
+- **SSoT**: 모든 UI 상태는 로컬 DB를 최종 소스. AuthRepository는 외부 결과를 로컬에 동기화.
+- **MVI Pattern**: `UiState`(불변), `UiIntent`(Sealed), `UiSideEffect`(단발성).
+- **Naming**: Entity → `[Name]Entity`, Repository → `[Name]Repository`, Impl → `[Name]RepositoryImpl`.
 
 ---
 
 ## 4. UI/UX 및 디자인 시스템
 
-- **공통 컴포넌트 우선**: 모든 화면은 `sharedUI` 모듈의 공통 컴포넌트를 최우선 사용한다.
-- **신규 요소 도입**: 기존 컴포넌트 비교 분석 → 확장 가능하면 기존 수정 → 불가능하면 `sharedUI`에 공통 컴포넌트로 먼저 등록.
-- **Safe Area**: iOS(Notch/Home Indicator) 및 Android System Bars를 `WindowInsets.safeDrawing` 등으로 강제 반영.
-- **스크롤 우선순위**: 0순위(중앙 메인 콘텐츠) → 1순위(리스트) → N순위(기타 보조 뷰).
+- **공통 컴포넌트 우선**: `sharedUI` 모듈의 공통 컴포넌트를 최우선 사용.
+- **신규 도입**: 기존 비교 → 확장 가능하면 기존 수정 → 불가능하면 `sharedUI`에 등록.
+- **Safe Area**: `WindowInsets.safeDrawing` 등으로 iOS/Android 시스템 바 처리.
 
 ---
 
 ## 5. 리소스 프로토콜
 
-- **Material Icons**: 기본 아이콘 라이브러리를 최우선 사용한다.
-- **커스텀 리소스 요청**: 구현 완료 후 `[대상 파일 | 추천 네이밍(ic_/img_) | 포맷 | 디자인 가이드]` 형식으로 요청한다.
+- **Material Icons** 최우선. 커스텀 필요 시 `[대상 | 네이밍(ic_/img_) | 포맷 | 가이드]` 형식.
 
 ---
 
-## 6. 글로벌 지역화 표준 (i18n/L10n)
+## 6. 지역화 표준 (i18n/L10n)
 
-- **Hardcoding 금지**: 코드 내 문자열 직접 입력은 엄격히 금지한다. 모든 텍스트는 리소스화한다.
-- **Key 표준**: `feature_component_action` 형식 (예: `login_button_submit`). 기본 값은 한국어.
-- **포맷팅**: 국가별 숫자, 날짜, 통화 표기법을 준수한다.
+- **Hardcoding 금지**: 모든 텍스트는 리소스화.
+- **Key 표준**: `feature_component_action` 형식. 기본 값은 한국어.
+- **포맷팅**: 국가별 숫자, 날짜, 통화 표기법 준수.
 
 ---
 
 ## 7. 개발 퍼포먼스 지침
 
 ### 7-1. 포괄적 구현
-- 코드 생성 시 **완전한 파일/모듈 단위**로 생성한다.
-- 에러 처리, 엣지 케이스, 유효성 검증을 기본 포함한다.
-- 핵심 비즈니스 로직에는 **유닛 테스트 코드**를 함께 생성한다.
+- 완전한 파일/모듈 단위 생성. 에러 처리, 엣지 케이스, 유효성 검증 포함.
+- 핵심 비즈니스 로직에는 유닛 테스트 코드를 함께 생성.
 
-### 7-2. 플랫폼별 구현 가이드
-- `expect`/`actual` 분기 시 **각 플랫폼별 구현 코드를 모두** 제공한다.
-- 플랫폼별 알려진 이슈(iOS 키보드 처리, Android 백프레스 등)를 사전 안내한다.
+### 7-2. 플랫폼별 구현
+- `expect`/`actual` 분기 시 각 플랫폼별 구현을 모두 제공.
+- 플랫폼별 알려진 이슈를 사전 안내.
 
 ### 7-3. 의사결정 지원
-- 아키텍처 결정 시 **장단점 비교표**와 구현 예시 코드를 함께 제공한다.
-- 라이브러리 선택 시 KMP 호환성, 커뮤니티 활성도, 유지보수 현황을 비교한다.
-- 디버깅 시 **근본 원인 분석(Root Cause Analysis)**을 포함한다.
+- 아키텍처 결정 시 장단점 비교표 + 예시 코드 제공.
+- 디버깅 시 근본 원인 분석(RCA) 포함.
 
 ### 7-4. 고도화된 워크플로우
-- **멀티스텝 파이프라인**: 코드 리뷰 → 리팩토링 → 테스트 생성 연속 수행.
-- **병렬 서브에이전트**: UI 코드와 테스트 코드를 동시 생성.
-- **Git 자동화**: 커밋 메시지, PR 설명, 체인지로그 생성 지원.
-- **대규모 변경 리뷰**: 전체 diff를 빠짐없이 리뷰하여 누락 방지.
+- **멀티스텝 파이프라인**: 리뷰 → 리팩토링 → 테스트 연속 수행.
+- **병렬 서브에이전트**: UI 코드와 테스트 코드 동시 생성.
+- **Git 자동화**: 커밋 메시지, PR 설명, 체인지로그 생성.
+
+### 7-5. 테스트 코드 지침
+
+**로직 테스트**:
+- UseCase/Repository에 단위 테스트 작성. 최소 5개 케이스.
+- Happy path + 엣지 케이스(빈 입력, null, 경계값, 음수, 오버플로우) 모두 포함.
+
+**UI 테스트**:
+- Compose UI 테스트 작성 (렌더링, 인터랙션, 상태 변화).
+- 엣지 케이스(빈 리스트, 긴 텍스트, RTL) 고려.
+
+**범위 산정**: 구현 전 테스트 가능 범위를 분석하고, 모든 시나리오에 테스트를 작성한다.
+
+### 7-6. 코드 단순화 원칙
+
+- 과도한 복잡성 발견 시 합리적 범위에서 리팩토링.
+- 하나의 함수 = 하나의 기능 (SRP). 단, 단순 몇 줄을 무리하게 분리하지 않는다.
+- 비즈니스 요구에 의한 복잡성은 유지, 불필요한 추상화는 제거.
+
+### 7-7. 지식 관리 (Memory Lifecycle)
+
+- 새로운 Gotcha/패턴 발견 → MEMORY.md 기록.
+- 오래 사용되지 않거나 무효한 정보 → 주기적 정리.
+- 반복 지침 → 통합 관리. 200줄 제한 준수.
+
+### 7-8. Gradle 캐시 관리
+
+- **이전 버전 캐시**: `~/.gradle/caches/<old-version>/` 정리 대상.
+- **디스크 모니터링**: 여유 공간 10GB 미만 시 캐시 정리 제안.
+- **빌드 후 정리**: 리소스 구조 변경 시 `rm -rf .gradle/configuration-cache composeApp/build`.
+- **권장 설정**: `org.gradle.parallel=true`, `org.gradle.caching=true`, `org.gradle.configuration-cache=true`.
 
 ---
 
 ## 8. 작업 완료 프로토콜 (Task Completion Protocol)
 
-> **모든 작업의 마지막 단계**에서 반드시 실행해야 하는 문서 동기화 프로세스.
-> 이 프로토콜은 프로젝트 지식이 항상 최신 상태를 유지하도록 보장한다.
+> 모든 작업의 마지막 단계에서 반드시 실행하는 문서 동기화 프로세스.
 
-### 8-1. 문서 계층 구조 (Documentation Hierarchy)
+### 8-1. 문서 계층 구조
 
 ```
-Level 0 (Global):    CLAUDE.md / CLAUDE_COMMON.md     ← 모든 프로젝트 공통 규칙
-Level 1 (Project):   INSTRUCTIONS.md                   ← 프로젝트 특화 아키텍처/비즈니스 규칙
-                     CONVENTIONS.md                    ← 코딩 컨벤션
-                     SKILLS.md                         ← 프로젝트 특화 스킬
-                     [도메인별].md                      ← 도메인 가이드 (예: LOCALIZATION.md)
-Level 2 (Memory):    memory/MEMORY.md                  ← Auto Memory (세션 간 지속, 200줄 이내)
-                     memory/structure.md               ← 파일 구조 참조
-                     memory/[topic].md                 ← 주제별 상세 노트
+Level 0 (Shared):    CLAUDE.md → CLAUDE_COMMON.md  ← 마스터 레포 공용 규칙 (심볼릭 링크)
+Level 1 (Project):   INSTRUCTIONS.md, CONVENTIONS.md, SKILLS.md, [도메인별].md
+Level 2 (Memory):    memory/MEMORY.md, memory/structure.md, memory/[topic].md
 ```
 
-### 8-2. 동기화 트리거 조건
-
-작업 완료 시 아래 중 **하나라도 해당**되면 문서 동기화를 실행한다:
+### 8-2. 동기화 트리거
 
 | 변경 유형 | 동기화 대상 |
 |-----------|------------|
-| 새 파일/디렉터리 추가 | `structure.md`, `INSTRUCTIONS.md` |
+| 새 파일/디렉터리 | `structure.md`, `INSTRUCTIONS.md` |
 | expect/actual 추가 | `INSTRUCTIONS.md`, `MEMORY.md` |
 | DB 스키마 변경 | `INSTRUCTIONS.md`, `MEMORY.md` |
-| 새 화면(MVI) 추가 | `structure.md`, `INSTRUCTIONS.md` |
-| DI 모듈 변경 | `INSTRUCTIONS.md` |
-| 빌드/릴리스 설정 변경 | `INSTRUCTIONS.md`, `MEMORY.md` |
-| 새 도메인 규칙/Gotcha 발견 | `CONVENTIONS.md`, `MEMORY.md` |
-| 아키텍처 패턴 변경 | `CLAUDE.md` (글로벌), `INSTRUCTIONS.md` (프로젝트) |
-| i18n 리소스 추가/삭제 | 도메인별 가이드 (예: `LOCALIZATION.md`) |
+| 새 화면(MVI) | `structure.md`, `INSTRUCTIONS.md` |
+| 새 Gotcha 발견 | `MEMORY.md` |
+| 아키텍처 패턴 변경 | `CLAUDE_COMMON.md`, `INSTRUCTIONS.md` |
 
-### 8-3. 동기화 실행 절차
+### 8-3. 실행 절차
 
-1. **변경 영향 분석**: 이번 작업에서 수정/생성된 파일 목록을 기반으로 영향받는 문서를 식별한다.
-2. **Top-Down 업데이트**: Level 0 → Level 1 → Level 2 순서로 검토하고 업데이트한다.
-3. **업데이트 판단 기준**:
-   - 해당 문서에 이미 최신 정보가 반영되어 있으면 → **Skip**
-   - 새로운 정보가 추가되어야 하면 → **Update**
-   - 기존 정보가 변경/삭제되었으면 → **Update**
-4. **변경 보고**: 동기화 결과를 사용자에게 테이블 형태로 보고한다.
-
-```
-예시 보고 형식:
-| 파일 | 상태 | 변경 내용 |
-|------|------|----------|
-| INSTRUCTIONS.md | Updated | 새 화면 LanguageSelection 추가 |
-| structure.md    | Updated | languageselection/ 디렉터리 추가 |
-| MEMORY.md       | Updated | i18n 섹션 추가 |
-| CONVENTIONS.md  | Skip    | 변경 없음 |
-```
+1. 수정/생성된 파일 목록 → 영향받는 문서 식별.
+2. Level 0 → 1 → 2 순서로 업데이트.
+3. 이미 최신이면 Skip, 변경 필요 시 Update.
+4. 결과를 테이블 형태로 보고.
 
 ### 8-4. 주의사항
 
-- **CLAUDE.md 수정은 신중하게**: 글로벌 규칙이므로 모든 프로젝트에 영향. 프로젝트 특화 규칙은 반드시 `INSTRUCTIONS.md`에 작성.
-- **MEMORY.md 200줄 제한**: 시스템 프롬프트에 자동 로딩되므로 간결하게 유지. 상세 내용은 별도 `memory/[topic].md`로 분리.
-- **단순 버그 수정**은 새로운 Gotcha가 발견된 경우에만 `MEMORY.md`에 기록. 일상적 수정은 Skip.
+- **CLAUDE_COMMON.md 수정은 신중**: 공용 규칙이므로 모든 프로젝트에 영향. 마스터 레포에서 관리.
+- **MEMORY.md 200줄 제한**: 상세 내용은 별도 `memory/[topic].md`로 분리.
