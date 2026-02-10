@@ -217,3 +217,13 @@ Level 2 (Memory):    memory/MEMORY.md, memory/structure.md, memory/[topic].md
 
 - **CLAUDE_COMMON.md 수정은 신중**: 공용 규칙이므로 모든 프로젝트에 영향. 마스터 레포에서 관리.
 - **MEMORY.md 200줄 제한**: 상세 내용은 별도 `memory/[topic].md`로 분리.
+
+## 9. Progress & Efficiency Report (Required Footer)
+모든 주요 작업(Task) 수행 후, 답변의 마지막에 반드시 아래 양식의 '작업 현황 요약'을 한국어로 출력하라.
+시스템 UI가 제공하지 않는 구체적인 진행 상황을 파악하기 위함이다.
+
+> **[📊 작업 현황 리포트]**
+> - **진행률**: {현재 단계} / {전체 계획 단계} ({진행률}%)
+> - **작업 상태**: {진행 중 / 완료 / 에러 발생}
+> - **남은 작업 예상**: 약 {예상 시간} 소요 예정
+> - **다음 단계**: {다음 수행할 작업 한 줄 요약}
