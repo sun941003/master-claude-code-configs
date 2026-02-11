@@ -51,6 +51,12 @@ composeApp/src/
 - **Sequential**: 의존성, 공유 파일, 범위 불명확
 - **Background**: 리서치/분석 (파일 수정 아님)
 
+## Agent Teams (병렬 멀티세션)
+- 독립 Claude Code 인스턴스가 팀으로 협업. `settings.json`에 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 필요.
+- **사용**: `/team-work <작업>` — 자동 분석 → 팀 구성 추천 → 실행 → 정리
+- **적합**: 3+ 레이어 구현, 경쟁 가설 디버깅, 다각도 코드 리뷰
+- **비적합**: 단일 파일 수정, 순차 의존 작업 (→ Sub-Agent 또는 단일 세션)
+
 ## 민감 정보 관리
 - `secrets.properties` (Git 제외), `secrets.properties.example` (Git 포함)
 - `google-services.json`, `GoogleService-Info.plist`, `*.jks`, `*.p8`: Git 제외
@@ -137,6 +143,23 @@ composeApp/src/
 2. **Contract First**: 병렬 작업 전, 에이전트 간 접점(인터페이스, UiState, Resource Key)을 확정.
 3. **Build-Check-Loop**: 코드 수정 후 반드시 빌드 실행.
 4. **보고**: `git diff` 기반 변경 사항을 한국어로 보고.
+
+### 1-3. Agent Teams (병렬 멀티세션)
+
+> 독립적인 Claude Code 인스턴스 여러 개가 팀으로 협업하는 실험적 기능.
+> `settings.json`에 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 필요.
+
+**Sub-Agent vs Agent Teams 판단 기준:**
+
+| 조건 | Sub-Agent | Agent Teams |
+|------|-----------|-------------|
+| 결과만 필요, 소통 불필요 | O | |
+| 팀원 간 토론/반박 필요 | | O |
+| 3+ 레이어 크로스 구현 | | O |
+| 단일 집중 작업 | O | |
+| 경쟁 가설 디버깅 | | O |
+
+**사용법**: `/team-work <작업 설명>` — 자동 분석 후 최적 방식 추천 및 팀 구성.
 
 ---
 

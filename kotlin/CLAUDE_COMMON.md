@@ -87,6 +87,23 @@
 3. **Build-Check-Loop**: 코드 수정 후 반드시 빌드 실행.
 4. **보고**: `git diff` 기반 변경 사항을 한국어로 보고.
 
+### 1-3. Agent Teams (병렬 멀티세션)
+
+> 독립적인 Claude Code 인스턴스 여러 개가 팀으로 협업하는 실험적 기능.
+> `settings.json`에 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 필요.
+
+**Sub-Agent vs Agent Teams 판단 기준:**
+
+| 조건 | Sub-Agent | Agent Teams |
+|------|-----------|-------------|
+| 결과만 필요, 소통 불필요 | O | |
+| 팀원 간 토론/반박 필요 | | O |
+| 3+ 레이어 크로스 구현 | | O |
+| 단일 집중 작업 | O | |
+| 경쟁 가설 디버깅 | | O |
+
+**사용법**: `/team-work <작업 설명>` — 자동 분석 후 최적 방식 추천 및 팀 구성.
+
 ---
 
 ## 2. 소통 및 언어 규칙
