@@ -1,8 +1,59 @@
-# Kotlin/KMP 프로젝트 마스터 지침 (CLAUDE_COMMON)
+# MoonDeveloper — Claude Code 공통 지침
 
-> **이 파일은 모든 Kotlin/KMP 프로젝트에 공통 적용되는 공용 규칙이다.**
-> 마스터 레포(`master-claude-code-configs`)에서 관리하며, 프로젝트에서는 `CLAUDE.md`로 심볼릭 링크한다.
-> 프로젝트별 특화 규칙은 각 프로젝트의 `INSTRUCTIONS.md`에서 정의한다.
+> **이 파일은 모든 MoonDeveloper 프로젝트에 공통 적용되는 Claude Code 지침이다.**
+> `master-claude-code-configs` 레포에서 관리하며, `claude-init()`으로 프로젝트에 복사된다.
+> 프로젝트별 특화 규칙은 각 프로젝트의 `CLAUDE.md` 하단 또는 `INSTRUCTIONS.md`에서 정의한다.
+
+---
+
+## 개발자 정보
+- Android/Kotlin 5년차, CMP 기반 하이브리드 앱 개발 (Android/iOS)
+- 향후 Desktop/Web 확장 계획
+
+## 기술 스택 (Default)
+- Kotlin 2.0+ (K2), Compose Multiplatform, Material 3
+- Navigation: Voyager / DI: Koin / Network: Ktor / Image: Coil 3.x
+- Local DB: SQLDelight / Architecture: MVVM + Clean Architecture
+- Build: Gradle Version Catalog (libs.versions.toml)
+
+## 코딩 컨벤션
+- 패키지: `com.moondeveloper.{appname}.{layer}.{feature}`
+- Composable: PascalCase / ScreenModel: Voyager
+- State: sealed class UiState / 에러: `Result<T>` + try-catch
+- 플랫폼 분기: expect/actual in `platform/` 패키지
+- import 포함 완전한 파일 단위 코드 / 주석: 영어, UI: 한국어
+
+## Clean Architecture 규칙
+- `domain/`: model, repository(인터페이스), usecase
+- `data/`: remote, local, repository(구현체)
+- `presentation/`: navigation, theme, component, screen
+- **domain은 data/presentation import 금지**
+
+## CMP 표준 프로젝트 구조
+```
+composeApp/src/
+├── commonMain/kotlin/com/moondeveloper/{app}/
+│   ├── di/ / domain/ / data/ / presentation/ / platform/
+├── androidMain/  ← actual
+└── iosMain/      ← actual
+```
+
+## 빌드 명령어
+```bash
+./gradlew :composeApp:assembleDebug                            # Android
+./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64      # iOS
+./gradlew :composeApp:allTests                                  # Test
+./gradlew clean build                                           # Full
+```
+
+## Sub-Agent 라우팅
+- **Parallel**: 3+ 독립 작업, 공유 상태 없음, 파일 경계 명확
+- **Sequential**: 의존성, 공유 파일, 범위 불명확
+- **Background**: 리서치/분석 (파일 수정 아님)
+
+## 민감 정보 관리
+- `secrets.properties` (Git 제외), `secrets.properties.example` (Git 포함)
+- `google-services.json`, `GoogleService-Info.plist`, `*.jks`, `*.p8`: Git 제외
 
 ---
 
@@ -190,8 +241,8 @@
 ### 8-1. 문서 계층 구조
 
 ```
-Level 0 (Shared):    CLAUDE.md → CLAUDE_COMMON.md  ← 마스터 레포 공용 규칙 (심볼릭 링크)
-Level 1 (Project):   INSTRUCTIONS.md, CONVENTIONS.md, SKILLS.md, [도메인별].md
+Level 0 (Shared):    CLAUDE.md                    ← 마스터 레포 공용 규칙
+Level 1 (Project):   CLAUDE.md 프로젝트 섹션, INSTRUCTIONS.md, CONVENTIONS.md
 Level 2 (Memory):    memory/MEMORY.md, memory/structure.md, memory/[topic].md
 ```
 
@@ -204,7 +255,7 @@ Level 2 (Memory):    memory/MEMORY.md, memory/structure.md, memory/[topic].md
 | DB 스키마 변경 | `INSTRUCTIONS.md`, `MEMORY.md` |
 | 새 화면(MVI) | `structure.md`, `INSTRUCTIONS.md` |
 | 새 Gotcha 발견 | `MEMORY.md` |
-| 아키텍처 패턴 변경 | `CLAUDE_COMMON.md`, `INSTRUCTIONS.md` |
+| 아키텍처 패턴 변경 | `CLAUDE.md`, `INSTRUCTIONS.md` |
 
 ### 8-3. 실행 절차
 
@@ -215,14 +266,14 @@ Level 2 (Memory):    memory/MEMORY.md, memory/structure.md, memory/[topic].md
 
 ### 8-4. 주의사항
 
-- **CLAUDE_COMMON.md 수정은 신중**: 공용 규칙이므로 모든 프로젝트에 영향. 마스터 레포에서 관리.
+- **공통 CLAUDE.md 수정은 신중**: 공용 규칙이므로 모든 프로젝트에 영향. 마스터 레포에서 관리.
 - **MEMORY.md 200줄 제한**: 상세 내용은 별도 `memory/[topic].md`로 분리.
 
 ## 9. Progress & Efficiency Report (Required Footer)
 모든 주요 작업(Task) 수행 후, 답변의 마지막에 반드시 아래 양식의 '작업 현황 요약'을 한국어로 출력하라.
 시스템 UI가 제공하지 않는 구체적인 진행 상황을 파악하기 위함이다.
 
-> **[📊 작업 현황 리포트]**
+> **[작업 현황 리포트]**
 > - **진행률**: {현재 단계} / {전체 계획 단계} ({진행률}%)
 > - **작업 상태**: {진행 중 / 완료 / 에러 발생}
 > - **남은 작업 예상**: 약 {예상 시간} 소요 예정
