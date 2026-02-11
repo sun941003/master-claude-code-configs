@@ -269,6 +269,40 @@ Level 2 (Memory):    memory/MEMORY.md, memory/structure.md, memory/[topic].md
 - **공통 CLAUDE.md 수정은 신중**: 공용 규칙이므로 모든 프로젝트에 영향. 마스터 레포에서 관리.
 - **MEMORY.md 200줄 제한**: 상세 내용은 별도 `memory/[topic].md`로 분리.
 
+## Git Branch 전략
+
+### 브랜치 구조
+- `master`: 스토어 배포 완료 최종 버전. release→master 병합. 태그(vX.Y.Z).
+- `release`: 배포 자동화 게이트. dev→release PR 시 CI 자동. 테스트 통과 → 스토어 배포.
+- `dev`: 모든 개발 작업. Claude Code 기본 브랜치.
+- `feature/*`: 대규모 기능 분기 (선택).
+
+### 브랜치 규칙 (Claude Code 필수)
+모든 개발 작업은 반드시 dev 브랜치에서 수행.
+작업 시작 전 현재 브랜치 확인 → dev 아니면 자동 전환:
+```bash
+CURRENT=$(git branch --show-current)
+if [ "$CURRENT" != "dev" ]; then
+  echo "⚠️ 현재 브랜치: $CURRENT → dev로 전환합니다."
+  git stash
+  git checkout dev
+  git pull origin dev
+  git stash pop 2>/dev/null || true
+fi
+```
+
+### 커밋 컨벤션
+feat: / fix: / chore: / ci: / docs: / refactor: / test:
+
+### 배포 프로세스
+1. dev에서 개발 완료
+2. /prepare-release <version> → 버전 bump + CHANGELOG + PR 생성
+3. 사용자 승인 → release 병합
+4. GitHub Actions: 테스트 → 빌드 → 스토어 배포
+5. 배포 확인 → release→master 병합 + 태그
+
+---
+
 ## 9. Progress & Efficiency Report (Required Footer)
 모든 주요 작업(Task) 수행 후, 답변의 마지막에 반드시 아래 양식의 '작업 현황 요약'을 한국어로 출력하라.
 시스템 UI가 제공하지 않는 구체적인 진행 상황을 파악하기 위함이다.
