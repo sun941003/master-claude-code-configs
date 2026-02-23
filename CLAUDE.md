@@ -335,3 +335,37 @@ feat: / fix: / chore: / ci: / docs: / refactor: / test:
 > - **작업 상태**: {진행 중 / 완료 / 에러 발생}
 > - **남은 작업 예상**: 약 {예상 시간} 소요 예정
 > - **다음 단계**: {다음 수행할 작업 한 줄 요약}
+
+---
+
+## 10. 세션 관리 (Claude ↔ Claude Code 동기화)
+
+> Claude(웹)과 Claude Code(CLI) 간 세션 컨텍스트를 공유하기 위한 프로토콜.
+> 템플릿: `templates/SESSION_LOG.md`, `templates/KNOWN_ISSUES.md`, `templates/LESSONS_LEARNED.md`
+
+### 10-1. 작업 시작 시
+- `PROGRESS.md` 읽고 현재 상태 파악.
+- 이전 `SESSION_LOG.md`가 있으면 "이전 세션 요약"으로 이동 (최근 3개만 유지).
+- 새 "현재 세션" 섹션 작성 시작.
+
+### 10-2. 작업 중
+- 주요 변경마다 `SESSION_LOG.md` 업데이트 (수정 파일, 주요 결정 등).
+- 새로운 이슈 발견 → `KNOWN_ISSUES.md` 기록.
+- 교훈 발생 → `LESSONS_LEARNED.md` 기록.
+
+### 10-3. 작업 종료 시
+- `SESSION_LOG.md` 최종 업데이트 (테스트 결과, 다음 스텝 포함).
+- `git add` + `git commit` 수행.
+
+---
+
+## 11. 테스트 규칙
+
+### 11-1. 기본 원칙
+- 기능 구현 후 관련 `desktopTest` 실행 필수.
+- 전체 테스트(`allTests`)는 작업 완료 시 **1회만** 실행.
+
+### 11-2. 실패 처리 (3-Strike Rule)
+- 동일 테스트 **FAIL 3회** → `@Ignore` 어노테이션 + `TODO` 주석 추가.
+- `DEFERRED_TESTS.md`에 기록 (테스트명, 실패 사유, 예상 해결 시점).
+- 다음 세션에서 우선 재시도 대상으로 관리.
