@@ -58,3 +58,8 @@ claude-init swift    # Swift 프로젝트 (향후)
 |------|------|------|
 | **공용 (Shared)** | 모든 프로젝트에 적용되는 규칙/에이전트/스킬 | 이 레포 (`master-claude-code-configs/`) |
 | **프로젝트 (Local)** | 특정 프로젝트에만 적용 | 각 프로젝트 폴더 (CLAUDE.md 하단, 전용 agents/skills) |
+
+## 전략 문서
+
+`docs/` 디렉토리에 MoonDeveloper 전략 문서가 있습니다.
+작업 유형별 참조 가이드는 [INDEX.md](INDEX.md)를 확인하세요.
