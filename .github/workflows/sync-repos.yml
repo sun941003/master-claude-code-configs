@@ -1,0 +1,72 @@
+name: Sync to All Repos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'CLAUDE.md'
+      - 'templates/**'
+      - '.github/workflows/sync-repos.yml'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo:
+          - splitly
+          - ureen
+          # - betOnMe
+      fail-fast: false
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Checkout target
+        uses: actions/checkout@v4
+        with:
+          repository: sun941003/${{ matrix.repo }}
+          token: ${{ secrets.SYNC_PAT }}
+          path: target-repo
+
+      - name: Sync CLAUDE.md
+        run: |
+          if [ -f "CLAUDE.md" ]; then
+            cp CLAUDE.md target-repo/CLAUDE.md
+            echo "" >> target-repo/CLAUDE.md
+            echo "---" >> target-repo/CLAUDE.md
+            echo "> Auto-synced @ $(date -u '+%Y-%m-%d %H:%M UTC') from ${{ github.sha }}" >> target-repo/CLAUDE.md
+          fi
+
+      - name: Sync templates (new files only)
+        run: |
+          for f in renovate.json lefthook.yml Dangerfile.ts; do
+            if [ -f "templates/$f" ] && [ ! -f "target-repo/$f" ]; then
+              cp "templates/$f" "target-repo/"
+            fi
+          done
+
+      - name: Check & PR
+        run: |
+          cd target-repo
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes"
+            exit 0
+          fi
+          BRANCH="auto-sync/configs-$(date +%Y%m%d-%H%M)"
+          git config user.name "MoonDeveloper Bot"
+          git config user.email "moonchangsun1003@gmail.com"
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "chore: sync shared configs from master-claude-code-configs"
+          git push origin "$BRANCH"
+          gh pr create \
+            --repo "sun941003/${{ matrix.repo }}" \
+            --title "chore: sync shared configs" \
+            --body "Auto-synced from master-claude-code-configs (${{ github.event.head_commit.message }})" \
+            --base "dev" \
+            --label "dependencies" || true
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PAT }}

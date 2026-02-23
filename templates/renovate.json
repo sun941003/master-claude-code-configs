@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["every weekend"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "마이너/패치 자동 머지 (CI 통과 시)",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "메이저 업데이트는 수동 확인",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "major"]
+    },
+    {
+      "description": "Kotlin/Gradle은 그룹으로 묶기",
+      "matchPackagePatterns": ["^org.jetbrains.kotlin", "^org.jetbrains.compose", "^androidx"],
+      "groupName": "Kotlin & Compose",
+      "automerge": false
+    },
+    {
+      "description": "테스트 라이브러리는 자동 머지",
+      "matchPackagePatterns": ["^junit", "^io.mockk", "^kotlin-test"],
+      "automerge": true
+    }
+  ],
+  "ignoreDeps": [],
+  "prHourlyLimit": 3,
+  "prConcurrentLimit": 5
+}

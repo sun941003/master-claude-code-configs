@@ -1,371 +1,57 @@
-# MoonDeveloper — Claude Code 공통 지침
+# CLAUDE.md — MoonDeveloper 공통 지침
 
-> **이 파일은 모든 MoonDeveloper 프로젝트에 공통 적용되는 Claude Code 지침이다.**
-> `master-claude-code-configs` 레포에서 관리하며, `claude-init()`으로 프로젝트에 복사된다.
-> 프로젝트별 특화 규칙은 각 프로젝트의 `CLAUDE.md` 하단 또는 `INSTRUCTIONS.md`에서 정의한다.
+> 이 파일은 master-claude-code-configs에서 자동 동기화됩니다.
+> 수정은 master-claude-code-configs에서만 하세요.
 
----
+## 아키텍처
 
-## 개발자 정보
-- Android/Kotlin 5년차, CMP 기반 하이브리드 앱 개발 (Android/iOS)
-- 향후 Desktop/Web 확장 계획
+- 신규 앱 (BetOnMe~): MVI (Model-View-Intent)
+- Splitly: 기존 MVVM 유지, 신규 ViewModel만 MVI
+- 패키지: `com.moondeveloper.{app}.{layer}.{feature}`
+- Import 포함 완전한 파일 단위 코드 작성
 
-## 기술 스택 (Default)
-- Kotlin 2.0+ (K2), Compose Multiplatform, Material 3
-- Navigation: Voyager / DI: Koin / Network: Ktor / Image: Coil 3.x
-- Local DB: SQLDelight / Architecture: MVVM + Clean Architecture
-- Build: Gradle Version Catalog (libs.versions.toml)
+## 기술 스택
 
-## 코딩 컨벤션
-- 패키지: `com.moondeveloper.{appname}.{layer}.{feature}`
-- Composable: PascalCase / ScreenModel: Voyager
-- State: sealed class UiState / 에러: `Result<T>` + try-catch
-- 플랫폼 분기: expect/actual in `platform/` 패키지
-- import 포함 완전한 파일 단위 코드 / 주석: 영어, UI: 한국어
+| 영역 | 기술 |
+|------|------|
+| UI | Compose Multiplatform + Material 3 |
+| DI | Koin 4.1.1 |
+| DB | Room KMP v5 |
+| Auth | Firebase Auth (GitLive) |
+| Build | Kotlin 2.3.0, AGP 8.11.2 |
+| CI | GitHub Actions + lefthook + Danger + Renovate |
 
-## Clean Architecture 규칙
-- `domain/`: model, repository(인터페이스), usecase
-- `data/`: remote, local, repository(구현체)
-- `presentation/`: navigation, theme, component, screen
-- **domain은 data/presentation import 금지**
+## 테스트 규칙
 
-## CMP 표준 프로젝트 구조
-```
-composeApp/src/
-├── commonMain/kotlin/com/moondeveloper/{app}/
-│   ├── di/ / domain/ / data/ / presentation/ / platform/
-├── androidMain/  ← actual
-└── iosMain/      ← actual
-```
+- **desktopTest only** (allTests 절대 금지)
+- 5분 컴파일 + 실행 타임아웃
+- Fake 구현 우선, 1 agent = 1 ViewModel
+- 3회 실패 → `@Ignore` + `TODO` + DEFERRED_TESTS.md 기록
+- 작업 전: `gradle --stop` 필수
 
-## 빌드 명령어
-```bash
-./gradlew :composeApp:assembleDebug                            # Android
-./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64      # iOS
-./gradlew :composeApp:allTests                                  # Test
-./gradlew clean build                                           # Full
-```
+## 세션 관리
 
-## Sub-Agent 라우팅
-- **Parallel**: 3+ 독립 작업, 공유 상태 없음, 파일 경계 명확
-- **Sequential**: 의존성, 공유 파일, 범위 불명확
-- **Background**: 리서치/분석 (파일 수정 아님)
+- 작업 시작: PROGRESS.md 확인
+- 작업 중: 해당 섹션 실시간 갱신
+- 작업 종료: "진행 현황 업데이트해줘"로 갱신
+- 브랜치: dev 작업, main 머지는 사용자 확인 후
 
-## Agent Teams (병렬 멀티세션)
-- 독립 Claude Code 인스턴스가 팀으로 협업. `settings.json`에 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 필요.
-- **사용**: `/team-work <작업>` — 자동 분석 → 팀 구성 추천 → 실행 → 정리
-- **적합**: 3+ 레이어 구현, 경쟁 가설 디버깅, 다각도 코드 리뷰
-- **비적합**: 단일 파일 수정, 순차 의존 작업 (→ Sub-Agent 또는 단일 세션)
+## 자동화 도구
 
-## 민감 정보 관리
-- `secrets.properties` (Git 제외), `secrets.properties.example` (Git 포함)
-- `google-services.json`, `GoogleService-Info.plist`, `*.jks`, `*.p8`: Git 제외
+- **lefthook**: pre-push desktopTest 자동 실행
+- **Danger JS**: PR 리뷰 (테스트 누락, i18n, STUB 감지)
+- **Renovate**: 의존성 자동 업데이트 (매주 주말)
+- **Gradle Build Cache**: CI 빌드 30-50% 단축
 
----
+## 커뮤니케이션
 
-## 0. [TOP PRIORITY] Smart Resource & Batch Strategy
+- 한국어 소통, 코드/변수명 영어
+- 결론 → 코드 → 핵심 조언 순서
+- 불필요한 서론/반복 금지
+- 기술 용어 원어 사용
 
-> Claude Max 플랜의 성능을 극한으로 활용하면서 한도를 효율적으로 관리하는 전략.
-> 이 섹션은 모든 다른 규칙보다 **최상위 우선순위**로 적용된다.
+## 참고 문서
 
-### 0-1. Dynamic Model Tiering (동적 모델 운용 전략)
-
-작업 복잡도에 따라 적합한 모델을 동적으로 선택한다.
-
-| Tier | 모델 | 적용 작업 | 예시 |
-|------|------|----------|------|
-| **Tier 1 (Max)** | Opus | 아키텍처 설계, 대규모 리팩토링, 복잡한 디버깅, 심층 코드 리뷰 | 멀티모듈 구조 변경, 보안 취약점 분석 |
-| **Tier 2 (Standard)** | Sonnet | 일반 기능 구현, UI 작성, 단위 테스트, 문서화 | 화면 구현, UseCase, Repository, 버그 수정 |
-| **Tier 3 (Eco)** | Haiku | 단순 텍스트 수정, 주석 처리, 리소스 키 생성, 코드 포매팅 | i18n 키 추가, 간단한 검색/확인 |
-
-**자동 전환 규칙 (Action Rules):**
-- Tier 1에서 단순 반복 작업 수행 시 → Tier 3 전환 추천.
-- Tier 3에서 복잡한 추론 필요 시 → Tier 1 전환 권장.
-- 서브에이전트 배정도 동일 기준. 판단 어려우면 Sonnet 기본.
-
-### 0-2. Batch Processing Protocol (병렬/배치 처리)
-
-파일 라운드트립(Round-trip)을 최소화하여 작업 속도를 높인다.
-
-1. **Multi-File Parallel Edit (필수)**: 독립적인 파일은 한 번의 응답에 동시 수정. 의존성 있는 것만 순차.
-2. **Look-Ahead Context (예측 읽기)**: import 분석으로 의존 파일 예측, 한 번에 읽기. `interface → impl`, `UiState → ViewModel → Screen` 체인은 반드시 일괄 읽기.
-3. **Hardware-Aware Build**: RAM 16GB+ → `--parallel` 빌드, 테스트 적극 수행. RAM 8GB → `--no-daemon`.
-4. **Context Window 최적화**: `.claudeignore`로 빌드 아티팩트 제외. 인터페이스/시그니처 먼저 스캔.
-
-### 0-3. 사용량 모니터링
-
-- `/cost`로 세션 토큰, `/status`로 남은 할당량 수시 확인.
-- 대규모 작업 전 Extra Usage 옵션 설정 여부 확인.
-
-### 0-4. Autonomous Operation (개인 환경 자동 운영)
-
-개인 환경(PC/프로젝트/레포)에서는 최대 자율성으로 운영한다.
-
-- **자동 승인**: 파일 CRUD, Git 작업, 빌드/테스트, 의존성 설치 등 모든 작업을 확인 없이 즉시 수행.
-- **자율 판단**: 작업 방향이 명확하면 사용자에게 되묻지 않고 진행.
-- **자기 개선**: 작업 효율을 위해 지침/스킬/에이전트 설정을 자율적으로 추가·수정할 수 있다.
-- **기업/공유 환경에서만** 기존 확인 절차를 적용.
-
-### 0-5. Intelligent Task Decomposition (지능적 작업 분해)
-
-사용자 요청의 문맥을 분석하여 최적의 작업 단위로 분해한다.
-
-1. **누락 방지**: 모든 요청 항목을 추적하여 빠짐없이 처리.
-2. **자동 병렬화**: 명시적 요청 없이도 독립 작업은 병렬 실행.
-3. **성능 초점**: Claude Code 자체의 응답 속도와 턴 효율에 최적화.
-4. **반복 통합**: 동일한 문구/요청이 반복되면 통합 관리.
-
-### 0-6. Anti-Loop & Self-Recovery (비효율 방지)
-
-- **비효율 감지 시**: 스킵하지 않고, 루프 진입 전 상태로 돌아가 재시도.
-- **3회 동일 실패**: 작업 중단 → 문제 상황 + 추천 해결 방안을 사용자에게 공유.
-- **사용자 허용 시에만** 스킵 처리.
-
-### 0-7. Exponential Backoff (장시간 작업 모니터링)
-
-빌드, 대용량 처리 등 장시간 작업은 지수 백오프로 상태를 확인한다.
-
-- 1차: 1분 후 → 2차: 2분 후 → 이후: 2분 단위 추가 (3분, 5분, 7분, ...)
-- 매초 확인하지 않는다. 백그라운드 실행 + 지수 백오프 체크를 조합한다.
-
----
-
-## 1. 에이전트 협업 및 병렬 워크플로우
-
-### 1-1. 에이전트 역할 구분
-
-- **Main Agent (Orchestrator)**: 요구사항 분석 → 작업 계획 → Sub-agents 분배 → 결과 통합 → 아키텍처 정합성 검증.
-- **Sub-agents**: `kmp-architect`, `compose-ui-builder`, `test-engineer`, `devops-runner` + 프로젝트별 에이전트.
-
-### 1-2. 병렬 작업 지침
-
-1. **Parallel Spawning**: UI/Logic/Resource 등 독립 단위로 분할하여 동시 실행.
-2. **Contract First**: 병렬 작업 전, 에이전트 간 접점(인터페이스, UiState, Resource Key)을 확정.
-3. **Build-Check-Loop**: 코드 수정 후 반드시 빌드 실행.
-4. **보고**: `git diff` 기반 변경 사항을 한국어로 보고.
-
-### 1-3. Agent Teams (병렬 멀티세션)
-
-> 독립적인 Claude Code 인스턴스 여러 개가 팀으로 협업하는 실험적 기능.
-> `settings.json`에 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 필요.
-
-**Sub-Agent vs Agent Teams 판단 기준:**
-
-| 조건 | Sub-Agent | Agent Teams |
-|------|-----------|-------------|
-| 결과만 필요, 소통 불필요 | O | |
-| 팀원 간 토론/반박 필요 | | O |
-| 3+ 레이어 크로스 구현 | | O |
-| 단일 집중 작업 | O | |
-| 경쟁 가설 디버깅 | | O |
-
-**사용법**: `/team-work <작업 설명>` — 자동 분석 후 최적 방식 추천 및 팀 구성.
-
----
-
-## 2. 소통 및 언어 규칙
-
-- **언어**: 모든 대화, 분석, 에러 보고는 **한국어**로 진행.
-- **사전 확인**: 모호한 부분은 구현 전 반드시 질문.
-- **번역 기준**: 기본 UI 리소스는 **한국어(ko)**를 최우선.
-
-> **Language Protocol:**
-> ALL responses MUST be in **Korean (한국어)**. Translate and reply in Korean unless explicitly asked to speak English.
-
----
-
-## 3. 기술 스택 및 아키텍처
-
-- **Clean Architecture & Offline-First**: UI → Domain → Data 레이어 분리. 로컬 DB 중심.
-- **SSoT**: 모든 UI 상태는 로컬 DB를 최종 소스. AuthRepository는 외부 결과를 로컬에 동기화.
-- **MVI Pattern**: `UiState`(불변), `UiIntent`(Sealed), `UiSideEffect`(단발성).
-- **Naming**: Entity → `[Name]Entity`, Repository → `[Name]Repository`, Impl → `[Name]RepositoryImpl`.
-
----
-
-## 4. UI/UX 및 디자인 시스템
-
-- **공통 컴포넌트 우선**: `sharedUI` 모듈의 공통 컴포넌트를 최우선 사용.
-- **신규 도입**: 기존 비교 → 확장 가능하면 기존 수정 → 불가능하면 `sharedUI`에 등록.
-- **Safe Area**: `WindowInsets.safeDrawing` 등으로 iOS/Android 시스템 바 처리.
-
----
-
-## 5. 리소스 프로토콜
-
-- **Material Icons** 최우선. 커스텀 필요 시 `[대상 | 네이밍(ic_/img_) | 포맷 | 가이드]` 형식.
-
----
-
-## 6. 지역화 표준 (i18n/L10n)
-
-- **Hardcoding 금지**: 모든 텍스트는 리소스화.
-- **Key 표준**: `feature_component_action` 형식. 기본 값은 한국어.
-- **포맷팅**: 국가별 숫자, 날짜, 통화 표기법 준수.
-
----
-
-## 7. 개발 퍼포먼스 지침
-
-### 7-1. 포괄적 구현
-- 완전한 파일/모듈 단위 생성. 에러 처리, 엣지 케이스, 유효성 검증 포함.
-- 핵심 비즈니스 로직에는 유닛 테스트 코드를 함께 생성.
-
-### 7-2. 플랫폼별 구현
-- `expect`/`actual` 분기 시 각 플랫폼별 구현을 모두 제공.
-- 플랫폼별 알려진 이슈를 사전 안내.
-
-### 7-3. 의사결정 지원
-- 아키텍처 결정 시 장단점 비교표 + 예시 코드 제공.
-- 디버깅 시 근본 원인 분석(RCA) 포함.
-
-### 7-4. 고도화된 워크플로우
-- **멀티스텝 파이프라인**: 리뷰 → 리팩토링 → 테스트 연속 수행.
-- **병렬 서브에이전트**: UI 코드와 테스트 코드 동시 생성.
-- **Git 자동화**: 커밋 메시지, PR 설명, 체인지로그 생성.
-
-### 7-5. 테스트 코드 지침
-
-**로직 테스트**:
-- UseCase/Repository에 단위 테스트 작성. 최소 5개 케이스.
-- Happy path + 엣지 케이스(빈 입력, null, 경계값, 음수, 오버플로우) 모두 포함.
-
-**UI 테스트**:
-- Compose UI 테스트 작성 (렌더링, 인터랙션, 상태 변화).
-- 엣지 케이스(빈 리스트, 긴 텍스트, RTL) 고려.
-
-**범위 산정**: 구현 전 테스트 가능 범위를 분석하고, 모든 시나리오에 테스트를 작성한다.
-
-### 7-6. 코드 단순화 원칙
-
-- 과도한 복잡성 발견 시 합리적 범위에서 리팩토링.
-- 하나의 함수 = 하나의 기능 (SRP). 단, 단순 몇 줄을 무리하게 분리하지 않는다.
-- 비즈니스 요구에 의한 복잡성은 유지, 불필요한 추상화는 제거.
-
-### 7-7. 지식 관리 (Memory Lifecycle)
-
-- 새로운 Gotcha/패턴 발견 → MEMORY.md 기록.
-- 오래 사용되지 않거나 무효한 정보 → 주기적 정리.
-- 반복 지침 → 통합 관리. 200줄 제한 준수.
-
-### 7-8. Gradle 캐시 관리
-
-- **이전 버전 캐시**: `~/.gradle/caches/<old-version>/` 정리 대상.
-- **디스크 모니터링**: 여유 공간 10GB 미만 시 캐시 정리 제안.
-- **빌드 후 정리**: 리소스 구조 변경 시 `rm -rf .gradle/configuration-cache composeApp/build`.
-- **권장 설정**: `org.gradle.parallel=true`, `org.gradle.caching=true`, `org.gradle.configuration-cache=true`.
-
----
-
-## 8. 작업 완료 프로토콜 (Task Completion Protocol)
-
-> 모든 작업의 마지막 단계에서 반드시 실행하는 문서 동기화 프로세스.
-
-### 8-1. 문서 계층 구조
-
-```
-Level 0 (Shared):    CLAUDE.md                    ← 마스터 레포 공용 규칙
-Level 1 (Project):   CLAUDE.md 프로젝트 섹션, INSTRUCTIONS.md, CONVENTIONS.md
-Level 2 (Memory):    memory/MEMORY.md, memory/structure.md, memory/[topic].md
-```
-
-### 8-2. 동기화 트리거
-
-| 변경 유형 | 동기화 대상 |
-|-----------|------------|
-| 새 파일/디렉터리 | `structure.md`, `INSTRUCTIONS.md` |
-| expect/actual 추가 | `INSTRUCTIONS.md`, `MEMORY.md` |
-| DB 스키마 변경 | `INSTRUCTIONS.md`, `MEMORY.md` |
-| 새 화면(MVI) | `structure.md`, `INSTRUCTIONS.md` |
-| 새 Gotcha 발견 | `MEMORY.md` |
-| 아키텍처 패턴 변경 | `CLAUDE.md`, `INSTRUCTIONS.md` |
-
-### 8-3. 실행 절차
-
-1. 수정/생성된 파일 목록 → 영향받는 문서 식별.
-2. Level 0 → 1 → 2 순서로 업데이트.
-3. 이미 최신이면 Skip, 변경 필요 시 Update.
-4. 결과를 테이블 형태로 보고.
-
-### 8-4. 주의사항
-
-- **공통 CLAUDE.md 수정은 신중**: 공용 규칙이므로 모든 프로젝트에 영향. 마스터 레포에서 관리.
-- **MEMORY.md 200줄 제한**: 상세 내용은 별도 `memory/[topic].md`로 분리.
-
-## Git Branch 전략
-
-### 브랜치 구조
-- `master`: 스토어 배포 완료 최종 버전. release→master 병합. 태그(vX.Y.Z).
-- `release`: 배포 자동화 게이트. dev→release PR 시 CI 자동. 테스트 통과 → 스토어 배포.
-- `dev`: 모든 개발 작업. Claude Code 기본 브랜치.
-- `feature/*`: 대규모 기능 분기 (선택).
-
-### 브랜치 규칙 (Claude Code 필수)
-모든 개발 작업은 반드시 dev 브랜치에서 수행.
-작업 시작 전 현재 브랜치 확인 → dev 아니면 자동 전환:
-```bash
-CURRENT=$(git branch --show-current)
-if [ "$CURRENT" != "dev" ]; then
-  echo "⚠️ 현재 브랜치: $CURRENT → dev로 전환합니다."
-  git stash
-  git checkout dev
-  git pull origin dev
-  git stash pop 2>/dev/null || true
-fi
-```
-
-### 커밋 컨벤션
-feat: / fix: / chore: / ci: / docs: / refactor: / test:
-
-### 배포 프로세스
-1. dev에서 개발 완료
-2. /prepare-release <version> → 버전 bump + CHANGELOG + PR 생성
-3. 사용자 승인 → release 병합
-4. GitHub Actions: 테스트 → 빌드 → 스토어 배포
-5. 배포 확인 → release→master 병합 + 태그
-
----
-
-## 9. Progress & Efficiency Report (Required Footer)
-모든 주요 작업(Task) 수행 후, 답변의 마지막에 반드시 아래 양식의 '작업 현황 요약'을 한국어로 출력하라.
-시스템 UI가 제공하지 않는 구체적인 진행 상황을 파악하기 위함이다.
-
-> **[작업 현황 리포트]**
-> - **진행률**: {현재 단계} / {전체 계획 단계} ({진행률}%)
-> - **작업 상태**: {진행 중 / 완료 / 에러 발생}
-> - **남은 작업 예상**: 약 {예상 시간} 소요 예정
-> - **다음 단계**: {다음 수행할 작업 한 줄 요약}
-
----
-
-## 10. 세션 관리 (Claude ↔ Claude Code 동기화)
-
-> Claude(웹)과 Claude Code(CLI) 간 세션 컨텍스트를 공유하기 위한 프로토콜.
-> 템플릿: `templates/SESSION_LOG.md`, `templates/KNOWN_ISSUES.md`, `templates/LESSONS_LEARNED.md`
-
-### 10-1. 작업 시작 시
-- `PROGRESS.md` 읽고 현재 상태 파악.
-- 이전 `SESSION_LOG.md`가 있으면 "이전 세션 요약"으로 이동 (최근 3개만 유지).
-- 새 "현재 세션" 섹션 작성 시작.
-
-### 10-2. 작업 중
-- 주요 변경마다 `SESSION_LOG.md` 업데이트 (수정 파일, 주요 결정 등).
-- 새로운 이슈 발견 → `KNOWN_ISSUES.md` 기록.
-- 교훈 발생 → `LESSONS_LEARNED.md` 기록.
-
-### 10-3. 작업 종료 시
-- `SESSION_LOG.md` 최종 업데이트 (테스트 결과, 다음 스텝 포함).
-- `git add` + `git commit` 수행.
-
----
-
-## 11. 테스트 규칙
-
-### 11-1. 기본 원칙
-- 기능 구현 후 관련 `desktopTest` 실행 필수.
-- 전체 테스트(`allTests`)는 작업 완료 시 **1회만** 실행.
-
-### 11-2. 실패 처리 (3-Strike Rule)
-- 동일 테스트 **FAIL 3회** → `@Ignore` 어노테이션 + `TODO` 주석 추가.
-- `DEFERRED_TESTS.md`에 기록 (테스트명, 실패 사유, 예상 해결 시점).
-- 다음 세션에서 우선 재시도 대상으로 관리.
+- 전략: `master-claude-code-configs/docs/` (8개)
+- 프로젝트 스펙: 각 프로젝트 `docs/`
+- 시크릿: `moondeveloper-secrets` (git-crypt)

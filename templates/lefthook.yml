@@ -1,0 +1,11 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint-check:
+      run: ./gradlew :composeApp:lintDebug --daemon 2>/dev/null || echo "lint skip"
+
+pre-push:
+  commands:
+    desktop-test:
+      run: timeout 300 ./gradlew :composeApp:desktopTest --no-daemon -Dorg.gradle.workers.max=2 2>&1 | tail -5
+      fail_text: "desktopTest 실패 — 푸시 차단. 테스트 수정 후 재시도."
