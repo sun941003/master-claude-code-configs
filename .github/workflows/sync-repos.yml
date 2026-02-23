@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         repo:
-          - splitly
+          - splitlyProject
           - ureen
           # - betOnMe
       fail-fast: false
