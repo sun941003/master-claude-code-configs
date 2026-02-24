@@ -29,3 +29,9 @@ KMP (Kotlin 2.3.0) + Compose Multiplatform + Material 3 + Koin 4.1.1 + Room KMP 
 `kotlin/CLAUDE_COMMON.md` — 모든 KMP 프로젝트의 마스터 규칙
 `kotlin/CONVENTIONS.md` — 코딩 컨벤션
 `kotlin/GLOBAL_SKILLS.md` — 12개 공용 스킬
+
+## 모듈화 규칙
+- 3-Tier: OSS 라이브러리(moon-*) → 앱 라이브러리({app}-*) → 앱
+- OSS 모듈은 앱 의존성 제로 (Firebase, Play 등 금지)
+- Convention Plugin으로 빌드 설정 통일
+- 상세: .claude/agents/modularization-agent.md 참조
