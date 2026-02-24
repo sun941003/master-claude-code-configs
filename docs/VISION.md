@@ -2,6 +2,7 @@
 
 > 모든 프로젝트의 방향 기준이 되는 최상위 문서.
 > 다른 문서(DEVELOPMENT_GUIDE, TOOLCHAIN_STRATEGY 등)는 이 비전에 정렬한다.
+> **최종 업데이트**: 2026-02-24
 
 ---
 
@@ -93,9 +94,9 @@ CI/CD, 테스트, 배포, 스토어 업데이트까지 — 자동화 가능한 �
 
 | 앱 | 상태 | 설명 |
 |----|------|------|
-| **Splitly** | Phase 12 개발 중 (배포 준비) | 정산 + 가계부 앱. 78개+ 언어, Android/iOS/Web |
-| **ureen** | 홀딩 | 로또 추천 앱. 수익 확신 시 재개 |
-| **BetOnMe** | 기획 전 | 습관 내기 앱. 경쟁자 1개(Stickk), 구독 모델. 다음 개발 대상 |
+| **Splitly** | P11 ⏸️ + **P12 완료** (사업자등록 대기 후 스토어 제출) | 정산 + 가계부 앱. 78개+ 언어, Android/iOS/Web. 테스트 922개. |
+| **ureen** | 홀딩 | 로또 추천 앱. Step 0-15 완료. 수익 확신 시 재개 |
+| **BetOnMe** | 기획 전 | 습관 내기 앱. 경쟁자 1개(Stickk), 구독 모델. Splitly 출시 후 착수 |
 
 ---
 
@@ -109,6 +110,7 @@ CI/CD, 테스트, 배포, 스토어 업데이트까지 — 자동화 가능한 �
 | 개발 중 기능 고도화 지속 | Splitly 성공 | 출시 후가 아닌 개발 중에도 품질 개선 |
 | KMP 테스트는 desktopTest only | Splitly 루프 | allTests 금지, 5분 타임아웃, Fake 우선 |
 | STUB 구현은 Phase별 추적 | Splitly Phase 12 | QA 체크리스트에 STUB 목록 관리 |
+| 자동 테스팅 인프라 선행 | Splitly Phase 12 | 3계층 자동 테스트 구축 (Maestro E2E 제외 — 실기기 연결 이슈) |
 
 ---
 
@@ -122,4 +124,4 @@ CI/CD, 테스트, 배포, 스토어 업데이트까지 — 자동화 가능한 �
 | APP_PORTFOLIO.md | 앱별 실행 계획, 우선순위, Go/No-Go 기준 |
 | MONETIZATION.md | 수익화 전략, 가격 프레임워크, 투자 단계 |
 | SECRETS_REGISTRY.md | 키/인증서 중앙 관리 (git-crypt) |
-
+| moondeveloper_strategy_masterplan_v2_2.md | 병렬 개발 전략 + 사업자등록 계획 (별도 문서) |

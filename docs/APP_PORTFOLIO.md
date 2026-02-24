@@ -2,6 +2,7 @@
 
 > 앱별 실행 계획, 우선순위, 시장 분석.
 > 신규 앱 추가 시 이 문서의 Go/No-Go 체크리스트를 통과해야 한다.
+> **최종 업데이트**: 2026-02-24
 
 ---
 
@@ -9,7 +10,7 @@
 
 | 순위 | 앱 | 상태 | 카테고리 | 수익 모델 |
 |------|-----|------|---------|----------|
-| 1 | **Splitly** | Phase 12 개발 중 | 금융/유틸 | Freemium + AdMob |
+| 1 | **Splitly** | P11 ⏸️ + P12 완료 (사업자등록 대기) | 금융/유틸 | Freemium + AdMob |
 | 2 | **BetOnMe** | 기획 전 (다음) | 생산성/건강 | 구독 |
 | 3 | **NoSpend** | 아이디어 | 금융 | Freemium |
 | 4 | **SubShare** | 아이디어 | 금융/소셜 | Freemium |
@@ -22,13 +23,15 @@
 ### 현황
 
 - Phase 10 완료 (78개+ 언어, 보안 감사, i18n QA)
-- Phase 11 세션 4까지 완료 (스토어 에셋, IAP, 스크린샷)
-- Phase 12 진행 중 (기술 부채 + 기능 고도화 + 자동화 인프라)
-- 스토어 배포 홀딩 (사업자등록 대기)
+- Phase 11 ⏸️ — 세션 1~4 완료 (계정등록, 스토어에셋, IAP, 스크린샷), 세션 5~8 사업자등록 대기
+- **Phase 12 100% 완료** — 기술 부채 해소, 기능 고도화, 자동 테스트 인프라 구축
+- 테스트 922개, dev 브랜치 d00c124
+- 자동 테스팅 3계층 구축 완료 (Maestro E2E 제외 — 실기기 연결 미해결)
+- 스토어 배포: 사업자등록 완료 후 빌드 생성 → 스토어 등록 → 비공개 테스트 14일 → 정식 출시
 
 ### 기술 스택
 
-KMP + Compose Multiplatform, Room v5, Firebase, Koin 4.1.1, Kotlin 2.3.0, Next.js (웹)
+KMP + Compose Multiplatform, Room v5, Firebase, Koin 4.1.1, Kotlin 2.3.0, AGP 8.11.2, Next.js (웹)
 
 ### 수익 모델
 
@@ -153,10 +156,12 @@ BetOnMe 차별점:
 
 ### 상태: 홀딩
 
-- Step 0-15 완료, CI/CD 디버깅 중
+- Step 0-15 완료 (로드맵 v4), CI/CD 디버깅 중
+- Gemini 디자인 완료 (design/ 디렉토리에 에셋 존재)
 - 타겟 시장 너무 좁음 (한국 로또만)
 - 글로벌 확장 어려움 (각국 로또 시스템이 다름)
 - 수익 확신이 생길 때까지 개발 중단
+- 사용자 요청 전까지 보류
 
 ### 재개 조건
 
@@ -224,4 +229,3 @@ BetOnMe 차별점:
 - [VISION.md](VISION.md) — 비전, 목표
 - [LIBRARY_STRATEGY.md](LIBRARY_STRATEGY.md) — 모듈 재사용
 - [MONETIZATION.md](MONETIZATION.md) — 수익화 상세
-

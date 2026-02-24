@@ -2,6 +2,7 @@
 
 > 개발 도구, CI/CD, 자동화, 하드웨어 전략.
 > 목표: "내가 직접 확인/판단해야 하는 일을 최소화"
+> **최종 업데이트**: 2026-02-24
 
 ---
 
@@ -50,10 +51,16 @@ IDE(AS/Fleet) 전환 제안:
 | Web CI | dev push | npm build → Firebase Hosting | ✅ |
 | GitHub Release | tag push | 아티팩트 업로드 | ✅ |
 
-### 목표 파이프라인 (Phase 12+)
+### 자동 테스트 파이프라인 (Phase 12 구축 완료)
 
 ```
-[Layer 2 — dev push 시 자동]
+[Layer 1 — 코드 변경 시 즉시 (CC 작업 중)] ✅ 완료
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+∙ 기능 구현/수정 완료 → 즉시 관련 desktopTest 실행
+∙ FAIL 시 CC가 자동 수정 시도 (3회까지)
+∙ 3회 실패 → @Ignore + TODO + DEFERRED_TESTS.md 기록
+
+[Layer 2 — dev push 시 자동 (CI/CD)] ✅ 완료
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 트리거: push to dev
 러너: ubuntu-latest (무료)
@@ -65,7 +72,7 @@ Steps:
   4. Lint/Warning 체크
   5. 결과 → 슬랙 알림
 
-[Layer 3 — 릴리즈 전 종합]
+[Layer 3 — 릴리즈 전 종합] ⬜ 배포 시점에 활성화
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 트리거: workflow_dispatch (수동) 또는 release/* push
 
@@ -76,6 +83,12 @@ Steps:
   4. APK 크기 체크
   5. 번들 분석
   6. 결과 리포트 → 슬랙
+
+[E2E 테스트 — Maestro] ⏸️ 블로커: 실기기 연결 미해결
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+∙ Maestro 설정 완료, 테스트 스크립트 작성됨
+∙ 연결된 기기를 찾지 못하는 이슈로 실행 불가
+∙ 해결 시 Layer 2에 통합 예정
 
 [배포 파이프라인 — 최종 목표]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -175,33 +188,37 @@ Steps:
 
 ## Claude ↔ Claude Code 동기화
 
-### 현재 문제
-
-- 새 대화 열면 이전 작업 컨텍스트 끊김
-- MD 파일 동기화를 수동으로 챙겨야 함
-- CC 작업 진행률/루프 여부 확인이 어려움
-
-### 해결 — 3단계
+### 3-Layer 컨텍스트 체계 (구축 완료 ✅)
 
 ```
-━━ 단계 1: 즉시 적용 (완료 ✅) ━━
+Layer 1: Memory (자동, 상태 캐시)
+  ∙ 현재 어디에 있는가 — 프로젝트 상태, 크리덴셜, 핵심 결정
+  ∙ 태그 체계: [A-프로젝트], [B-인프라], [C-규칙], [D-전략], [E-싱크]
+  ∙ CC 복귀 시 또는 세션 정리 시 memory_user_edits로 갱신
 
-∙ SESSION_LOG.md 템플릿 생성 (커밋 4726a0d)
-∙ KNOWN_ISSUES.md 템플릿 생성
-∙ LESSONS_LEARNED.md 템플릿 생성
-∙ CLAUDE.md에 세션 관리 + 테스트 규칙 추가
+Layer 2: Project Instructions (규칙)
+  ∙ 어떻게 일하는가 — 규칙, 구조, 워크플로우
+  ∙ Phase 전환 시 1회 갱신
 
-━━ 단계 2: MCP 서버 (중기) ━━
+Layer 3: 상세 문서 소스
+  ∙ 실시간: past_chats 검색 (자동, 항상 최신)
+  ∙ CC용: Git 레포 내 PROGRESS.md, docs/ (CC가 자동 읽음)
+  ∙ 장기 참조: 프로젝트 파일 (QA체크리스트, 스토어가이드 등)
+```
 
-∙ 파일 시스템 MCP → Claude(채팅)에서 프로젝트 파일 직접 읽기
-∙ GitHub MCP → PR/이슈/커밋 히스토리 참조
-∙ 이렇게 하면 채팅에서 CC 작업 결과를 실시간 확인 가능
+### CC 복귀 감지 프로토콜
 
-━━ 단계 3: 자동화 (장기) ━━
+```
+시그널 감지:
+  ∙ CC 출력 붙여넣기 (커밋 해시, 파일 목록, 에러 로그)
+  ∙ "CC에서 ~했어", "작업 끝났어", "다음 뭐 하지"
+  ∙ 이전 채팅에서 CC 프롬프트를 만든 직후의 새 채팅
 
-∙ CC 작업 완료 → 슬랙 요약 알림
-∙ 배포 결과 → 슬랙 (Interactive Buttons)
-∙ Cowork 연동 시 동일 문서 체계 자동 적용
+자동 수행:
+  1. past_chats로 최근 대화 검색 → 이전 CC 프롬프트 파악
+  2. 붙여넣은 결과와 대조 → Memory 갱신 필요 여부 판단
+  3. 갱신 필요 시 → 사용자 확인 후 memory_user_edits 실행
+  4. 다음 작업 제안
 ```
 
 ### CC 루프 방지 전략
@@ -218,6 +235,22 @@ Steps:
 
 4. SESSION_LOG에 진행률 기록
    CC가 작업 중 주요 단계마다 SESSION_LOG 업데이트
+```
+
+### 확장 계획
+
+```
+━━ 단계 2: MCP 서버 (중기) ━━
+
+∙ 파일 시스템 MCP → Claude(채팅)에서 프로젝트 파일 직접 읽기
+∙ GitHub MCP → PR/이슈/커밋 히스토리 참조
+∙ 이렇게 하면 채팅에서 CC 작업 결과를 실시간 확인 가능
+
+━━ 단계 3: 자동화 (장기) ━━
+
+∙ CC 작업 완료 → 슬랙 요약 알림
+∙ 배포 결과 → 슬랙 (Interactive Buttons)
+∙ Cowork 연동 시 동일 문서 체계 자동 적용
 ```
 
 ---
@@ -404,4 +437,3 @@ fastlane deliver --api_key_path $ASC_KEY_PATH
 - [VISION.md](VISION.md) — 비전, 목표, 원칙
 - [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) — 개발 표준, 테스트, 코드 컨벤션
 - [LIBRARY_STRATEGY.md](LIBRARY_STRATEGY.md) — 모듈화, 오픈소스, 다국어
-
