@@ -19,3 +19,9 @@
 - CPU 100% 허용 (macOS UI 응답성 확인됨), 단 I/O 병목 회피
 - 대용량 파일 작업(번역 78개 등)은 배치로 묶어 I/O 1회
 - 동일 프로젝트에서 ./gradlew 동시 실행 금지
+
+## Analytics 성능 규칙 (추가)
+- 이벤트 배칭: Release 빌드에서 20건 단위 또는 30초 간격
+- 고빈도 이벤트 샘플링: PERFORMANCE 10%, SCROLL 1%
+- Debug 빌드: 즉시 전송 (배칭 비활성)
+- Screen View: NavigationTracker 미들웨어로 자동화 (수동 호출 금지)

@@ -20,3 +20,9 @@
 3. 다음 작업으로 진행
 
 > 완벽한 테스트가 목표지만 루프보다 진행이 우선
+
+## Hardening Phase 테스트 규칙 (추가)
+- 모듈별 테스트 독립 실행 보장 (다른 모듈 실패 전파 금지)
+- 전체 desktopTest 30분 상한 — 초과 시 느린 테스트 식별
+- Analytics 이벤트 테스트: DebugView 또는 FakeTracker 기반
+- UI 테스트(Maestro): Flow YAML은 CC 작성, 실행은 실기기에서
